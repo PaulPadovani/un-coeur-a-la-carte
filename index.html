@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un cœur à la carte — simulateur de physiologie cardiaque congénitale</title>
+<link rel="stylesheet" href="css/vu.css">
+</head>
+<body>
+
+<header>
+  <div class="marque">
+    <img class="logo" src="assets/serveur.png" alt="">
+    <h1>Un cœur <em>à la carte</em></h1>
+  </div>
+  <p>Composez le cœur, lancez la circulation, stabilisez l’enfant.</p>
+  <button id="btn-flux" class="pilule on" aria-pressed="true"
+          title="Afficher ou masquer les particules de flux">Flux</button>
+  <div class="chrono"><span id="v-temps">H0</span></div>
+</header>
+
+<main>
+
+  <!-- ---------------- zone gauche : construction ---------------- -->
+  <section class="panneau" id="construction">
+    <div class="titre-ligne">
+      <h2>1 — Composer</h2>
+      <button id="btn-normal" title="Repartir d’un cœur normal">Cœur normal</button>
+    </div>
+    <div id="slots"></div>
+    <div class="transport">
+      <button id="btn-start">Démarrer</button>
+      <button id="btn-pause" disabled>Pause</button>
+    </div>
+    <label class="vitesse">Vitesse
+      <input type="range" id="vitesse" min="10" max="360" value="60" step="10">
+      <span id="v-vitesse">60 min/s</span>
+    </label>
+
+    <h2>2 — Stabiliser</h2>
+    <div id="gestes"></div>
+
+    <p class="note legende-flux">
+      Dans le schéma, les particules avancent à la vitesse du <b>débit</b> qui
+      les porte — et non au rythme du scope. Un poumon en hyperdébit file,
+      une aorte volée se traîne. Elles franchissent réellement le foramen et
+      la communication interauriculaire. Bouton <b>Flux</b> en haut pour les
+      éteindre.
+    </p>
+  </section>
+
+  <!-- ---------------- zone centrale : le cœur ---------------- -->
+  <section class="scene">
+    <!-- viewBox resserrée sur le contenu réel : la rangée des oreillettes
+         laissait 240 unités vides en bas, autant de hauteur perdue pour
+         le schéma, qui est de toute façon contraint par la hauteur. -->
+    <svg id="coeur" viewBox="-50 -30 1220 2830" preserveAspectRatio="xMidYMid meet"></svg>
+  </section>
+
+  <!-- ---------------- zone droite : moniteur ---------------- -->
+  <section class="panneau moniteur">
+    <h2>Moniteur</h2>
+    <canvas id="ecg" width="360" height="110"></canvas>
+
+    <div class="vitaux">
+      <div><span class="lbl">SaO₂</span><span class="val" id="v-sao2">--</span></div>
+      <div><span class="lbl">SvO₂</span><span class="val" id="v-svo2">--</span></div>
+      <div><span class="lbl">Qp/Qs</span><span class="val" id="v-qpqs">--</span></div>
+      <div><span class="lbl">DO₂ syst.</span><span class="val" id="v-do2">--</span></div>
+    </div>
+
+    <!-- le canal ne se lit pas comme un nombre : on le montre se fermer -->
+    <div class="canal">
+      <div class="canal-tete">
+        <span class="lbl">Canal artériel</span>
+        <span class="val" id="v-canal">--</span>
+      </div>
+      <svg id="canal-svg" viewBox="0 0 200 96" preserveAspectRatio="xMidYMid meet"></svg>
+      <p class="canal-etat" id="v-canal-etat"></p>
+    </div>
+
+    <div class="jauge"><div class="jauge-in ok" id="reserve"></div></div>
+    <p class="jauge-lbl">Réserve physiologique</p>
+
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+</main>
+
+<!-- ---------------- bandeau bas : transition circulatoire néonatale ---------------- -->
+<footer class="transition">
+  <div class="transition-tete">
+    <button id="btn-graphe" title="Replier pour agrandir le schéma">Replier</button>
+    <h2>Transition circulatoire</h2>
+    <div class="legende">
+      <span class="lg lg-rvp">RVP / RVS</span>
+      <span class="lg lg-qp">Qp</span>
+      <span class="lg lg-qs">Qs</span>
+      <span class="lg lg-canal">canal artériel</span>
+      <span class="lg lg-proj">projection</span>
+    </div>
+    <div class="lecture" id="lecture-transition">—</div>
+  </div>
+  <canvas id="transition" width="1600" height="180"></canvas>
+</footer>
+
+<script src="js/cartes.js"></script>
+<script src="js/anatomie.js"></script>
+<script src="js/model.js"></script>
+<script src="js/vitals.js"></script>
+<script src="js/render.js"></script>
+<script src="js/transition.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

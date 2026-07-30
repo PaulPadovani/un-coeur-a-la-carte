@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "Si vous utilisez ce simulateur dans un travail pédagogique ou scientifique, merci de citer cette version."
+title: "Un cœur à la carte"
+type: software
+authors:
+  - family-names: "Padovani"
+    given-names: "Paul"
+version: 0.1.0
+date-released: 2026-07-30
+license: PolyForm-Noncommercial-1.0.0
+abstract: >-
+  Simulateur pédagogique, interactif et sans dépendance de la physiopathologie
+  néonatale du ventricule unique et d'autres cardiopathies congénitales.

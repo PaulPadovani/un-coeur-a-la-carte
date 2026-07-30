@@ -1,0 +1,23 @@
+Required Notice: Copyright © 2026 Paul Padovani.
+
+LICENSING SCOPE
+
+The PolyForm Noncommercial License 1.0.0 in LICENSE applies to the software,
+including its HTML, CSS, JavaScript, tests, report generator, generated report,
+and documentation, except for the Brand Assets listed below.
+
+BRAND ASSETS — NO LICENSE GRANTED
+
+The following files are excluded from the PolyForm Noncommercial License:
+
+- assets/logo.svg
+- assets/marque.svg
+- assets/serveur.png
+
+The name “Un cœur à la carte”, its logos, its visual identity, and the files
+listed above are not licensed for reuse, modification, or redistribution.
+All rights are reserved by Paul Padovani.
+
+Anyone implementing or redistributing the software must remove or replace
+these Brand Assets unless they have obtained separate written permission from
+Paul Padovani.
