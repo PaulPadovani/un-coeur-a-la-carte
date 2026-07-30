@@ -8,6 +8,7 @@ authors:
 version: 0.1.0
 date-released: 2026-07-30
 license: PolyForm-Noncommercial-1.0.0
+repository-code: "https://github.com/PaulPadovani/un-coeur-a-la-carte"
 abstract: >-
   Simulateur pédagogique, interactif et sans dépendance de la physiopathologie
   néonatale du ventricule unique et d'autres cardiopathies congénitales.

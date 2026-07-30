@@ -9,6 +9,9 @@ Cette version est autonome et constitue le périmètre prévu pour le futur dép
 GitHub. Ouvrir `index.html` par double-clic : aucune dépendance, aucun build et
 aucune connexion ne sont nécessaires.
 
+**Dépôt officiel :**
+[github.com/PaulPadovani/un-coeur-a-la-carte](https://github.com/PaulPadovani/un-coeur-a-la-carte)
+
 > **Avertissement médical.** Cet outil est exclusivement pédagogique. Il
 > n'est ni un dispositif médical, ni un modèle prédictif validé, ni une aide au
 > diagnostic ou à la décision thérapeutique. Ses paramètres privilégient la
