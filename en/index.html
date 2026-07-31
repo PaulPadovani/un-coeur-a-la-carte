@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un cœur à la carte — congenital heart physiology simulator</title>
+<link rel="alternate" hreflang="fr" href="../">
+<link rel="alternate" hreflang="en" href="./">
+<link rel="stylesheet" href="../css/vu.css">
+</head>
+<body>
+
+<header>
+  <div class="marque">
+    <img class="logo" src="../assets/serveur.png" alt="">
+    <h1>Un cœur <em>à la carte</em></h1>
+  </div>
+  <p>Build the heart, start the circulation, stabilise the child.</p>
+  <nav class="langue" aria-label="Language">
+    <a href="../index.html" hreflang="fr" lang="fr" title="Version française">FR</a>
+    <span aria-current="page">EN</span>
+  </nav>
+  <button id="btn-flux" class="pilule on" aria-pressed="true"
+          title="Show or hide flow particles">Flow</button>
+  <div class="chrono"><span id="v-temps">H0</span></div>
+</header>
+
+<main>
+
+  <!-- Left panel: anatomy and interventions -->
+  <section class="panneau" id="construction">
+    <div class="titre-ligne">
+      <h2>1 — Assemble</h2>
+      <button id="btn-normal" title="Reset to a normal heart">Normal heart</button>
+    </div>
+    <div id="slots"></div>
+    <div class="transport">
+      <button id="btn-start">Start</button>
+      <button id="btn-pause" disabled>Pause</button>
+    </div>
+    <label class="vitesse">Speed
+      <input type="range" id="vitesse" min="10" max="360" value="60" step="10">
+      <span id="v-vitesse">60 min/s</span>
+    </label>
+
+    <h2>2 — Stabilise</h2>
+    <div id="gestes"></div>
+
+    <p class="note legende-flux">
+      In the diagram, particles move at the speed of the <b>blood flow</b>
+      carrying them—not at the monitor rate. Pulmonary overcirculation races;
+      a stolen aortic flow drifts. Particles actually cross the bulboventricular
+      foramen and the atrial communication. Use <b>Flow</b> above to hide them.
+    </p>
+  </section>
+
+  <!-- Centre panel: assembled heart -->
+  <section class="scene">
+    <svg id="coeur" viewBox="-50 -30 1220 2830" preserveAspectRatio="xMidYMid meet"
+         aria-label="Assembled cardiac anatomy"></svg>
+  </section>
+
+  <!-- Right panel: physiological monitor -->
+  <section class="panneau moniteur">
+    <h2>Monitor</h2>
+    <canvas id="ecg" width="360" height="110" aria-label="ECG trace"></canvas>
+
+    <div class="vitaux">
+      <div><span class="lbl">SaO₂</span><span class="val" id="v-sao2">--</span></div>
+      <div><span class="lbl">SvO₂</span><span class="val" id="v-svo2">--</span></div>
+      <div><span class="lbl">Qp/Qs</span><span class="val" id="v-qpqs">--</span></div>
+      <div><span class="lbl">Systemic DO₂</span><span class="val" id="v-do2">--</span></div>
+    </div>
+
+    <div class="canal">
+      <div class="canal-tete">
+        <span class="lbl">Ductus arteriosus</span>
+        <span class="val" id="v-canal">--</span>
+      </div>
+      <svg id="canal-svg" viewBox="0 0 200 96" preserveAspectRatio="xMidYMid meet"
+           aria-label="Ductus arteriosus patency"></svg>
+      <p class="canal-etat" id="v-canal-etat"></p>
+    </div>
+
+    <div class="jauge"><div class="jauge-in ok" id="reserve"></div></div>
+    <p class="jauge-lbl">Physiological reserve</p>
+
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+</main>
+
+<!-- Neonatal circulatory transition -->
+<footer class="transition">
+  <div class="transition-tete">
+    <button id="btn-graphe" title="Collapse to enlarge the diagram">Collapse</button>
+    <h2>Circulatory transition</h2>
+    <div class="legende">
+      <span class="lg lg-rvp">PVR / SVR</span>
+      <span class="lg lg-qp">Qp</span>
+      <span class="lg lg-qs">Qs</span>
+      <span class="lg lg-canal">ductus arteriosus</span>
+      <span class="lg lg-proj">projection</span>
+    </div>
+    <div class="lecture" id="lecture-transition">—</div>
+  </div>
+  <canvas id="transition" width="1600" height="180"
+          aria-label="Neonatal circulatory transition graph"></canvas>
+</footer>
+
+<script>window.APP_LANG = 'en';</script>
+<script src="../js/i18n.js"></script>
+<script src="../js/cartes.js"></script>
+<script src="../js/anatomie.js"></script>
+<script src="../js/model.js"></script>
+<script src="../js/vitals.js"></script>
+<script src="../js/render.js"></script>
+<script src="../js/transition.js"></script>
+<script src="../js/main.js"></script>
+</body>
+</html>

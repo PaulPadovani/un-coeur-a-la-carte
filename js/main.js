@@ -10,11 +10,11 @@ var $ = function (s) { return document.querySelector(s); };
    sort de chaque ventricule. Poser l'aorte au-dessus du ventricule droit,
    c'est construire une transposition — il n'y a plus de case a cocher. */
 var SLOTS = [
-  ['cia',              'Septum interauriculaire',                 'cia'],
-  ['ventriculeDroit',  'Ventricule droit (à gauche de l’image)',  'ventriculeDroit'],
-  ['ventriculeGauche', 'Ventricule gauche (à droite de l’image)', 'ventriculeGauche'],
-  ['voieDroite',       'Voie d’éjection droite',                  'voies'],
-  ['voieGauche',       'Voie d’éjection gauche',                  'voies']
+  ['cia',              'slot.cia',              'Septum interauriculaire',                 'cia'],
+  ['ventriculeDroit',  'slot.ventriculeDroit',  'Ventricule droit (à gauche de l’image)',  'ventriculeDroit'],
+  ['ventriculeGauche', 'slot.ventriculeGauche', 'Ventricule gauche (à droite de l’image)', 'ventriculeGauche'],
+  ['voieDroite',       'slot.voieDroite',       'Voie d’éjection droite',                  'voies'],
+  ['voieGauche',       'slot.voieGauche',       'Voie d’éjection gauche',                  'voies']
 ];
 
 /* L'archétype de référence, pour repartir de zéro. */
@@ -27,20 +27,23 @@ var COEUR_NORMAL = {
 function construireSelecteurs() {
   var h = '';
   SLOTS.forEach(function (s) {
-    h += '<label class="slot"><span>' + s[1] + '</span><select data-slot="' + s[0] + '">';
-    CATALOGUE[s[2]].forEach(function (o) {
+    h += '<label class="slot"><span>' + tr(s[1], s[2]) + '</span><select data-slot="' + s[0] + '">';
+    CATALOGUE[s[3]].forEach(function (o) {
       h += '<option value="' + o.id + '"' +
-           (anat[s[0]] === o.id ? ' selected' : '') + '>' + o.nom + '</option>';
+           (anat[s[0]] === o.id ? ' selected' : '') + '>' +
+           tr('catalogue.' + s[3] + '.' + o.id, o.nom) + '</option>';
     });
     h += '</select></label>';
     if (s[0] === 'ventriculeGauche') h += '<p class="note" id="note-av"></p>';
     if (s[0] === 'voieGauche') h += '<p class="note" id="note-voies"></p>';
   });
-  h += '<label class="slot"><span>Communication interventriculaire</span>' +
+  h += '<label class="slot"><span>' +
+       tr('slot.fbv', 'Communication interventriculaire') + '</span>' +
        '<select data-slot="fbv">';
   CATALOGUE.fbv.forEach(function (o) {
     h += '<option value="' + o.id + '"' +
-         (anat.fbv === o.id ? ' selected' : '') + '>' + o.nom + '</option>';
+         (anat.fbv === o.id ? ' selected' : '') + '>' +
+         tr('catalogue.fbv.' + o.id, o.nom) + '</option>';
   });
   h += '</select></label>';
   $('#slots').innerHTML = h;
@@ -64,11 +67,11 @@ function noteAV() {
   var s = anat.suffixeAV();
   n.className = 'note';
   if (s === '-atrG')
-    n.textContent = 'Aucune valve d’entrée à droite : atrésie tricuspide.';
+    n.textContent = tr('note.av.tricuspide', 'Aucune valve d’entrée à droite : atrésie tricuspide.');
   else if (s === '-atrD')
-    n.textContent = 'Aucune valve d’entrée à gauche : atrésie mitrale.';
+    n.textContent = tr('note.av.mitrale', 'Aucune valve d’entrée à gauche : atrésie mitrale.');
   else
-    n.textContent = 'Deux valves auriculo-ventriculaires perméables.';
+    n.textContent = tr('note.av.deuxValves', 'Deux valves auriculo-ventriculaires perméables.');
 }
 
 /* Rappelle au joueur ce que son assemblage des gros vaisseaux signifie. */
@@ -78,23 +81,23 @@ function noteVoies() {
   if (!n) return;
   if (d.deuxAortes) {
     n.className = 'note alerte';
-    n.textContent = 'Deux aortes : aucune artère pulmonaire, donc aucun lit d’oxygénation.';
+    n.textContent = tr('note.voies.deuxAortes', 'Deux aortes : aucune artère pulmonaire, donc aucun lit d’oxygénation.');
   } else if (d.deuxAP) {
     n.className = 'note alerte';
-    n.textContent = 'Deux artères pulmonaires : aucune aorte, donc aucune issue systémique.';
+    n.textContent = tr('note.voies.deuxAP', 'Deux artères pulmonaires : aucune aorte, donc aucune issue systémique.');
   } else if (d.discordance) {
     n.className = 'note';
-    n.textContent = 'L’aorte naît du ventricule droit : discordance ventriculo-artérielle (transposition).';
+    n.textContent = tr('note.voies.discordance', 'L’aorte naît du ventricule droit : discordance ventriculo-artérielle (transposition).');
   } else {
     n.className = 'note';
-    n.textContent = 'Concordance ventriculo-artérielle.';
+    n.textContent = tr('note.voies.concordance', 'Concordance ventriculo-artérielle.');
   }
 }
 
 /* apercu pendant la construction, sans lancer la simulation */
 function verdictConstruction() {
   var e = resoudre(anat, { });
-  var c = classer(anat, e);
+  var c = traduireVerdict(classer(anat, e));
   var box = $('#verdict');
   box.className = 'verdict ' + c.statut;
   box.innerHTML = '<strong>' + c.titre + '</strong><span>' + c.texte + '</span>';
@@ -224,17 +227,18 @@ function dessinerCanal(p, etat) {
   o.push('<g fill="#6B665C" stroke="none" font-size="11" ' +
          'font-family="ui-sans-serif,-apple-system,Helvetica,Arial,sans-serif" ' +
          'text-anchor="middle">');
-  o.push('<text x="38" y="96">Ao</text><text x="162" y="96">AP</text>');
+  o.push('<text x="38" y="96">Ao</text><text x="162" y="96">' +
+         tr('vessel.pulmonaryAbbr', 'AP') + '</text>');
   o.push('</g>');
   svg.innerHTML = o.join('');
 }
 
 function etatCanal(p) {
-  if (p > 0.95) return 'largement ouvert';
-  if (p > 0.6) return 'en cours de fermeture';
-  if (p > 0.2) return 'restrictif';
-  if (p > 0.04) return 'quasi fermé';
-  return 'fermé — ligament artériel';
+  if (p > 0.95) return tr('canal.wide', 'largement ouvert');
+  if (p > 0.6) return tr('canal.closing', 'en cours de fermeture');
+  if (p > 0.2) return tr('canal.restrictive', 'restrictif');
+  if (p > 0.04) return tr('canal.nearlyClosed', 'quasi fermé');
+  return tr('canal.closed', 'fermé — ligament artériel');
 }
 
 function majMoniteur() {
@@ -247,18 +251,20 @@ function majMoniteur() {
   set('#v-canal', Math.round(anat.canal * 100) + ' %');
   set('#v-canal-etat', etatCanal(anat.canal));
   dessinerCanal(anat.canal, e);
-  set('#v-temps', 'H' + Math.floor(sim.t) + (sim.pause ? ' · pause' : ''));
+  set('#v-temps', 'H' + Math.floor(sim.t) +
+      (sim.pause ? ' · ' + tr('time.pause', 'pause') : ''));
   $('#reserve').style.width = Math.round(sim.reserve * 100) + '%';
   $('#reserve').className = 'jauge-in ' +
     (sim.reserve > 0.55 ? 'ok' : sim.reserve > 0.25 ? 'alerte' : 'critique');
   $('#v-sao2').style.color = satColor(e.SaO2);
 
-  var c = sim.classe || classer(anat, e);
+  var c = traduireVerdict(sim.classe || classer(anat, e));
   var box = $('#verdict');
   if (sim.mort) {
+    var mort = traduireDeces(sim.mort);
     box.className = 'verdict letal';
-    box.innerHTML = '<strong>' + sim.mort.titre + '</strong><span>' +
-                    sim.mort.texte + '</span>';
+    box.innerHTML = '<strong>' + mort.titre + '</strong><span>' +
+                    mort.texte + '</span>';
   } else if (sim.enCours) {
     box.className = 'verdict ' + c.statut;
     box.innerHTML = '<strong>' + c.titre + '</strong><span>' + c.texte + '</span>';
@@ -305,8 +311,9 @@ var GESTES = [
 function construireGestes() {
   var h = '';
   GESTES.forEach(function (g) {
-    h += '<button class="geste" data-geste="' + g[0] + '" title="' + g[2] + '">' +
-         g[1] + '</button>';
+    h += '<button class="geste" data-geste="' + g[0] + '" title="' +
+         tr('gesture.' + g[0] + '.title', g[2]) + '">' +
+         tr('gesture.' + g[0] + '.name', g[1]) + '</button>';
   });
   $('#gestes').innerHTML = h;
   Array.prototype.forEach.call(document.querySelectorAll('[data-geste]'), function (b) {
@@ -335,7 +342,8 @@ function reinitGestes() {
 function majTransport() {
   var b = $('#btn-pause');
   b.disabled = !sim.enCours || !!sim.mort;
-  var voulu = sim.pause ? 'Reprendre' : 'Pause';
+  var voulu = sim.pause ? tr('transport.resume', 'Reprendre') :
+                          tr('transport.pause', 'Pause');
   if (b.textContent !== voulu) b.textContent = voulu;
   b.classList.toggle('on', !!sim.pause);
   document.body.classList.toggle('en-pause', !!sim.pause);
@@ -354,7 +362,7 @@ function remettreAZero() {
   anat.canal = 1;
   reinitGestes();
   document.body.classList.remove('en-cours');
-  $('#btn-start').textContent = 'Démarrer';
+  $('#btn-start').textContent = tr('transport.start', 'Démarrer');
   dessiner(); verdictConstruction(); majTransport();
 }
 
@@ -363,7 +371,7 @@ function demarrer() {
   sim.vitesse = +$('#vitesse').value;
   sim.enCours = true;
   document.body.classList.add('en-cours');
-  $('#btn-start').textContent = 'Recommencer';
+  $('#btn-start').textContent = tr('transport.restart', 'Recommencer');
   majTransport();
 }
 
@@ -411,7 +419,8 @@ window.addEventListener('DOMContentLoaded', function () {
   /* Le schéma est très haut : replier le bandeau lui rend toute la place. */
   $('#btn-graphe').addEventListener('click', function () {
     var replie = document.body.classList.toggle('graphe-replie');
-    this.textContent = replie ? 'Déplier' : 'Replier';
+    this.textContent = replie ? tr('graph.expand', 'Déplier') :
+                               tr('graph.collapse', 'Replier');
     setTimeout(redimensionner, 220);
   });
 
