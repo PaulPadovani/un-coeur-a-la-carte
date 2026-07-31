@@ -5,9 +5,11 @@ empilant des cartes anatomiques, on lance l'horloge à la naissance, et on
 regarde la circulation se réorganiser. Cœur normal, CIA, CIV, transposition,
 coarctation, ventricule unique : c'est le même moteur.
 
-Cette version est autonome et constitue le périmètre prévu pour le futur dépôt
-GitHub. Ouvrir `index.html` par double-clic : aucune dépendance, aucun build et
-aucune connexion ne sont nécessaires.
+**[▶ Lancer le simulateur en ligne](https://paulpadovani.github.io/un-coeur-a-la-carte/)**
+
+Cette version autonome constitue le dépôt public officiel. Elle peut aussi être
+utilisée hors ligne en ouvrant `index.html` par double-clic : aucune dépendance,
+aucun build et aucune connexion ne sont nécessaires.
 
 **Dépôt officiel :**
 [github.com/PaulPadovani/un-coeur-a-la-carte](https://github.com/PaulPadovani/un-coeur-a-la-carte)
