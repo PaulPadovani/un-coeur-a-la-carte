@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Un cœur à la carte — simulateur de physiologie cardiaque congénitale</title>
+<link rel="alternate" hreflang="fr" href="./">
+<link rel="alternate" hreflang="en" href="en/">
 <link rel="stylesheet" href="css/vu.css">
 </head>
 <body>
@@ -14,6 +16,10 @@
     <h1>Un cœur <em>à la carte</em></h1>
   </div>
   <p>Composez le cœur, lancez la circulation, stabilisez l’enfant.</p>
+  <nav class="langue" aria-label="Langue">
+    <span aria-current="page">FR</span>
+    <a href="en/index.html" hreflang="en" lang="en" title="English version">EN</a>
+  </nav>
   <button id="btn-flux" class="pilule on" aria-pressed="true"
           title="Afficher ou masquer les particules de flux">Flux</button>
   <div class="chrono"><span id="v-temps">H0</span></div>
@@ -104,6 +110,7 @@
   <canvas id="transition" width="1600" height="180"></canvas>
 </footer>
 
+<script src="js/i18n.js"></script>
 <script src="js/cartes.js"></script>
 <script src="js/anatomie.js"></script>
 <script src="js/model.js"></script>

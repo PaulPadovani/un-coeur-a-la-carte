@@ -77,6 +77,18 @@ header p{
   margin:0;color:var(--doux);font-size:12.5px;flex:1;
   font-style:italic; padding-left:14px; border-left:1px solid var(--bord);
 }
+.langue{
+  display:flex; align-items:center; gap:2px; flex:none;
+  padding:2px; border:1px solid var(--bord-fort); border-radius:999px;
+  font:600 10.5px/1 ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  letter-spacing:.5px;
+}
+.langue a,.langue span{
+  min-width:29px; padding:6px 7px; border-radius:999px; text-align:center;
+}
+.langue a{color:var(--doux);text-decoration:none}
+.langue a:hover{color:var(--marine);background:var(--creux)}
+.langue [aria-current="page"]{color:#F7F5EF;background:var(--terre)}
 .chrono{
   font-variant-numeric:tabular-nums; font-size:18px; font-weight:600;
   color:var(--terre); letter-spacing:.5px;
@@ -294,6 +306,10 @@ body.en-pause .chrono{color:var(--doux)}
 @media (max-width:1220px){
   main{grid-template-columns:262px 1fr 292px}
   .lecture{margin-left:0;width:100%}
+}
+@media (max-width:1040px){
+  header p{display:none}
+  .langue{margin-left:auto}
 }
 @media (max-height:800px){
   .transition{flex-basis:132px}

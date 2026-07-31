@@ -93,8 +93,10 @@ function dessinerTransition(cvs, sim) {
   /* grille et graduations horaires */
   ctx.font = '10.5px ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
   ctx.textAlign = 'center';
-  var reperes = [[0, 'naissance'], [12, 'H12'], [24, 'H24'], [48, 'H48'],
-                 [72, 'H72'], [96, 'J4'], [120, 'J5'], [144, 'J6'], [168, 'J7']];
+  var jour = tr('graph.dayPrefix', 'J');
+  var reperes = [[0, tr('graph.birth', 'naissance')], [12, 'H12'], [24, 'H24'], [48, 'H48'],
+                 [72, 'H72'], [96, jour + '4'], [120, jour + '5'],
+                 [144, jour + '6'], [168, jour + '7']];
   ctx.strokeStyle = TR.cGrille; ctx.lineWidth = 1;
   reperes.forEach(function (r) {
     var x = Math.round(X(r[0])) + 0.5;
@@ -237,13 +239,16 @@ function dessinerTransition(cvs, sim) {
 
 var _NOMS_GESTES = { pge: 'PGE1', o2: 'O₂', no: 'NO', co2: 'CO₂',
                      btt: 'shunt', cerclage: 'cerclage', rashkind: 'Rashkind' };
-function LIBELLE_GESTE(k) { return _NOMS_GESTES[k] || k; }
+function LIBELLE_GESTE(k) {
+  return k === 'cerclage' ? tr('gesture.short.cerclage', _NOMS_GESTES[k]) :
+                            (_NOMS_GESTES[k] || k);
+}
 
 /* Ligne de lecture sous le titre : la valeur exacte à l'instant du curseur. */
 function lectureTransition(sim, etat) {
   var r = rapportRVP(sim.t, sim.anat.gestes);
   return 'H' + Math.floor(sim.t) +
-         ' · RVP/RVS ' + r.toFixed(2) +
+         ' · ' + tr('graph.resistanceLabel', 'RVP/RVS') + ' ' + r.toFixed(2) +
          ' · Qp ' + etat.Qp.toFixed(2) +
          ' · Qs ' + etat.Qs.toFixed(2) +
          ' · Qp/Qs ' + (etat.qpqs >= 99 ? '∞' : etat.qpqs.toFixed(2));

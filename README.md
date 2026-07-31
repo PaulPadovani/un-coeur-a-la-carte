@@ -1,11 +1,15 @@
 # Un cœur à la carte
 
+**Documentation : Français · [English](README.en.md)**
+
 **Simulateur de physiologie cardiaque congénitale.** On compose un cœur en
 empilant des cartes anatomiques, on lance l'horloge à la naissance, et on
 regarde la circulation se réorganiser. Cœur normal, CIA, CIV, transposition,
 coarctation, ventricule unique : c'est le même moteur.
 
-**[▶ Lancer le simulateur en ligne](https://paulpadovani.github.io/un-coeur-a-la-carte/)**
+**Simulateur en ligne :**
+[▶ Français](https://paulpadovani.github.io/un-coeur-a-la-carte/) ·
+[▶ English](https://paulpadovani.github.io/un-coeur-a-la-carte/en/)
 
 Cette version autonome constitue le dépôt public officiel. Elle peut aussi être
 utilisée hors ligne en ouvrant `index.html` par double-clic : aucune dépendance,
@@ -23,8 +27,8 @@ aucun build et aucune connexion ne sont nécessaires.
 
 Le dépôt contient uniquement :
 
-- le moteur et son interface (`index.html`, `css/`, `js/` et les ressources
-  indispensables dans `assets/`) ;
+- le moteur et son interface bilingue (`index.html`, `en/`, `css/`, `js/` et
+  les ressources indispensables dans `assets/`) ;
 - les quatre tests directionnels et le générateur du rapport de comportement ;
 - ce README et une bibliographie physiologique courte dans `REFERENCES.md` ;
 - les fichiers nécessaires à la licence, à la citation et aux contributions.
