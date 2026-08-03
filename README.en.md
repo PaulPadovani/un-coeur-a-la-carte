@@ -2,74 +2,83 @@
 
 **Documentation: [Français](README.md) · English**
 
-**A congenital heart physiology simulator.** Assemble a heart from anatomical
-cards, start the clock at birth, and watch the circulation reorganise. A normal
-heart, ASD, VSD, transposition, coarctation and functionally univentricular
-hearts all use the same physiological engine.
+An interactive congenital heart pathophysiology simulator focused on neonatal
+transition and functionally univentricular circulations.
 
-**Run online:**
-[▶ Français](https://paulpadovani.github.io/un-coeur-a-la-carte/) ·
-[▶ English](https://paulpadovani.github.io/un-coeur-a-la-carte/en/)
+[Open the simulator in English](https://paulpadovani.github.io/un-coeur-a-la-carte/en/)
+·
+[Ouvrir le simulateur en français](https://paulpadovani.github.io/un-coeur-a-la-carte/)
 
-The simulator also runs fully offline: download the repository and double-click
-`index.html` for French or `en/index.html` for English. There is no build step,
-dependency or network requirement.
+> **Medical disclaimer**
+>
+> This software is an educational tool. It is not a medical device, a
+> validated predictive model, or an aid to diagnosis or therapeutic
+> decision-making. It must not be used for patient care.
 
-**Official repository:**
-[github.com/PaulPadovani/un-coeur-a-la-carte](https://github.com/PaulPadovani/un-coeur-a-la-carte)
+## Overview
 
-> **Medical disclaimer.** This is an educational tool. It is not a medical
-> device, a validated predictive model, or an aid to diagnosis or therapeutic
-> decision-making. Its parameters favour correct physiological directionality
-> and conceptual clarity.
+“Un cœur à la carte” lets users assemble an anatomy from cards, start the
+circulation at birth, and observe its evolution throughout the first week of
+life. The same engine represents normal circulation, atrial and ventricular
+septal defects, transposition of the great arteries, pulmonary or systemic
+outflow obstruction, and several single-ventricle configurations.
 
-## How the bilingual version works
+The simulator connects anatomy, blood flow, and oxygenation. It displays in
+real time:
 
-- `/` is the French GitHub Pages version.
-- `/en/` is the English GitHub Pages version.
-- Both pages share the same HTML/CSS/JavaScript physiological engine.
-- `js/i18n.js` contains the English interface, intervention, classification
-  and outcome terminology; no browser storage or local data fetching is used.
+- arterial and venous oxygen saturation;
+- the pulmonary-to-systemic flow ratio (Qp/Qs);
+- systemic oxygen delivery and physiological reserve;
+- ductal closure and the fall in pulmonary vascular resistance;
+- the observed circulatory trajectory and a constant-settings projection;
+- the effects of seven medical or surgical interventions.
 
-The language selector always switches between these two stable URLs. The French
-and English interfaces therefore cannot drift into separate physiological
-implementations.
+Animated flow provides a qualitative representation of flow direction and
+distribution. It is not a computational fluid dynamics simulation.
+
+## Getting started
+
+### Online
+
+- [English interface](https://paulpadovani.github.io/un-coeur-a-la-carte/en/)
+- [Interface française](https://paulpadovani.github.io/un-coeur-a-la-carte/)
+
+### Offline
+
+1. Download or clone the repository.
+2. Open `en/index.html` for English or `index.html` for French.
+
+No installation, build step, dependency, or network connection is required.
+Both interfaces use the same physiological engine written in plain HTML, CSS,
+and JavaScript.
 
 ## Physiological model
 
-The engine translates the chosen anatomy into a graph, checks its connectivity,
-solves blood flows, and then calculates oxygen saturations using mass balance.
-It deliberately distinguishes two concepts:
+The engine translates the selected anatomy into a circulatory graph, checks
+pathway connectivity, solves blood flows, and then calculates oxygen
+saturations by mass balance.
 
-1. **Common ventricular pressure** determines how flow is divided between Qp
-   and Qs.
-2. **Complete mixing** determines systemic and pulmonary saturations.
+Two mechanisms are handled separately:
 
-This distinction allows one engine to represent a VSD, an ASD, transposition
-and functionally univentricular physiology without applying a single mixing
-formula to every anatomy.
+1. **common ventricular pressure**, which determines how flow is divided
+   between Qp and Qs;
+2. **complete mixing**, which determines systemic and pulmonary saturations.
 
-Pulmonary vascular resistance falls over the first week while ductal closure
-evolves independently between H12 and H72. The transition graph shows the
-observed trajectory as a solid line and a constant-settings projection as a
-dashed line. It is a teaching model, not a patient-specific prediction.
+This distinction allows one engine to represent separated circulations,
+intracardiac shunts, ventriculoarterial discordance, and functionally
+univentricular circulations.
 
-## Repository contents
+During neonatal transition, pulmonary vascular resistance falls while ductal
+closure evolves independently. Parameters are calibrated to preserve correct
+physiological directionality and educational coherence; they are not intended
+to produce individual predictions.
 
-The public repository contains:
+The main scientific foundations are documented in
+[`REFERENCES.md`](REFERENCES.md).
 
-- the bilingual interface and neonatal physiological engine;
-- four directional test scripts and the behavioural report generator;
-- a concise, verified physiological bibliography in `REFERENCES.md`;
-- licensing, citation and contribution files.
+## Behavioural validation
 
-It does not include manuscripts, unpublished articles, submission material,
-conference presentations, working bibliography files, scientific PDFs, Adobe
-sources, or the historical Glenn/Fontan engine.
-
-## Validation
-
-Run the four directional checks from the repository root:
+Four scripts check the essential directional behaviours:
 
 ```text
 node test.js
@@ -78,20 +87,64 @@ node test3.js
 node test4.js
 ```
 
-The verified behaviours include normal circulation, pulmonary and systemic
-duct dependence, pulmonary overcirculation, atrial restriction, transposition
-with inadequate mixing, and rejection of anatomically impossible outflow
-assemblies.
+They cover normal circulation, pulmonary and systemic duct dependence,
+pulmonary overcirculation, atrial restriction, transposition with inadequate
+mixing, and rejection of anatomically impossible outflow assemblies.
 
-## Licence and brand assets
+The behavioural report contains a matrix of 190 simulations — 19 anatomies
+and 10 intervention strategies — together with their evolution over seven
+days:
 
-The software is source-available under the
-[PolyForm Noncommercial License 1.0.0](LICENSE). Non-commercial educational,
-academic, scientific and healthcare use is allowed under its terms; commercial
-use requires separate written permission from Paul Padovani.
+- view [`rapport-moteur.html`](rapport-moteur.html);
+- regenerate it with `node rapport.js`.
 
-`assets/logo.svg`, `assets/marque.svg`, `assets/serveur.png`, and the name and
-visual identity “Un cœur à la carte” are excluded from the software licence.
-No reuse rights are granted for those elements. See [NOTICE](NOTICE).
+These checks assess the model's internal consistency and directional
+behaviour. They do not constitute clinical validation.
+
+## Repository structure
+
+| Component | Purpose |
+|---|---|
+| `index.html`, `en/index.html` | French and English interfaces |
+| `css/vu.css` | Layout, projection, and visual accessibility |
+| `js/anatomie.js` | Anatomy catalogue, resistances, and circulatory graph |
+| `js/model.js` | Flow, saturation, and classification calculations |
+| `js/vitals.js` | Clock, ductus arteriosus, physiological reserve, and events |
+| `js/render.js` | Assembly, rendering, and flow visualisation |
+| `js/transition.js` | Neonatal transition graph |
+| `js/i18n.js` | English interface terminology |
+| `js/main.js` | Interface coordination |
+| `test*.js`, `rapport.js` | Directional checks and behavioural report |
+
+## Scope and limitations
+
+- The model covers the neonatal period from birth to day 7.
+- Vascular and anatomical resistances are expressed in relative rather than
+  clinical units.
+- Glenn and Fontan circulations are not modelled.
+- Anomalous pulmonary venous return, heterotaxy, and atrioventricular valve
+  regurgitation are not represented.
+- Flow paths are visual cues, not calculated velocity fields.
+
+## Contributing and citation
+
+Contributions addressing physiological accuracy, educational value,
+accessibility, or robustness are welcome. Technical requirements and the
+contribution process are described in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Citation metadata is available in [`CITATION.cff`](CITATION.cff). GitHub also
+provides export options through **Cite this repository**.
+
+## Licence and brand identity
+
+The software is made available under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). It is **source-available**,
+not open source as defined by the Open Source Initiative. Commercial use
+requires separate written permission from Paul Padovani.
+
+The files `assets/logo.svg`, `assets/marque.svg`, and `assets/serveur.png`, as
+well as the “Un cœur à la carte” name and visual identity, are excluded from
+the software licence. No reuse rights are granted for these elements. See
+[`NOTICE`](NOTICE) for the full scope.
 
 Copyright © 2026 Paul Padovani.
