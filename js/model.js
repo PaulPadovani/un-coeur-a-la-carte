@@ -124,6 +124,11 @@ function resoudre(anat, env) {
   var Rsys = serie([rVoieSys, RVS]);
   var Rpulm = serie([rVoiePulm, RVP]);
   var Qs, Qp, qpqs;
+  /* Dans l'atresie tricuspide, tout le retour cave doit traverser la CIA
+     avant d'atteindre l'unique valve AV permeable. Une CIA restrictive
+     limite donc le remplissage ; un septum intact l'annule. Cette contrainte
+     de PRECHARGE est distincte du partage Qp/Qs calcule plus bas. */
+  var congestionSystemique = congestionSys(d, rA);
 
   if (ventCommun) {
     /* Une seule chambre ejecte dans les deux troncs. Chaque lit peut etre
@@ -159,6 +164,15 @@ function resoudre(anat, env) {
     var somme = Qs + Qp;
     if (somme > CFG.CO_MAX * 1.6) { var k = CFG.CO_MAX * 1.6 / somme; Qs *= k; Qp *= k; }
   }
+
+  /* La resistance interauriculaire agit ici comme limite de remplissage.
+     Le seuil et la pente sont partages avec l'obstruction du retour
+     pulmonaire : CIA large = aucune penalite, restrictive = bas debit,
+     septum intact = aucun regime stationnaire possible. */
+  var facteurRemplissage = 1 - congestionSystemique;
+  Qs *= facteurRemplissage;
+  Qp *= facteurRemplissage;
+
   qpqs = Qs > 1e-6 ? Qp / Qs : (Qp > 1e-6 ? 99 : 0);
   qpqs = Math.min(qpqs, 15);
 
@@ -239,8 +253,25 @@ function resoudre(anat, env) {
     retrogradeAorte: (rPont < 1e9) && (rVoieSys > 2.5 * (rVoiePulm + rPont)),
     obstacleSousAortique: obstacleSousAortique,
     obstacleSousPulm: obstacleSousPulm,
-    congestion: congestion, canal: d.canal
+    congestion: congestion,
+    congestionSystemique: congestionSystemique,
+    canal: d.canal
   };
+}
+
+/* Intensite normalisee d'un obstacle interauriculaire. Les resistances du
+   catalogue sont qualitatives : en dessous de 0,15 la communication est
+   fonctionnellement large ; le septum intact vaut 1. */
+function obstructionInterauriculaire(rCIA) {
+  if (rCIA >= 1e9) return 1;
+  return Math.min(1, Math.max(0, (rCIA - 0.15) / 1.1));
+}
+
+/* Congestion veineuse systemique : si la valve AV droite est atresique,
+   tout le retour cave doit sortir de l'OD par la CIA. */
+function congestionSys(d, rA) {
+  if (rA('valve AV droite') < 1e9) return 0;
+  return obstructionInterauriculaire(rA('CIA'));
 }
 
 /* Congestion veineuse pulmonaire : le retour pulmonaire doit trouver une
@@ -255,8 +286,7 @@ function congestionPulm(d, rA, cx) {
        shunt (atresie mitrale) gene reellement */
     return 0;
   }
-  if (rCIA >= 1e9) return 1;                 /* septum intact : issue nulle */
-  return Math.min(1, Math.max(0, (rCIA - 0.15) / 1.1));
+  return obstructionInterauriculaire(rCIA);
 }
 
 /* ------------------------------------------------------------------
@@ -281,6 +311,19 @@ function classer(anat, etat) {
     return { statut: 'impossible', cause: 'aucune-aorte',
              titre: 'Assemblage impossible',
              texte: 'Les deux ventricules éjectent dans une artère pulmonaire : il n’existe aucune aorte, donc aucune issue systémique. Pose une aorte sur l’une des deux voies.' };
+
+  /* Atrésie tricuspide : le retour cave doit obligatoirement passer de l'OD
+     vers l'OG. Le canal arteriel et les shunts arteriels ne peuvent pas
+     contourner une oreillette droite borgne. */
+  if (!cx.retourCave || etat.congestionSystemique >= 0.999)
+    return { statut: 'letal', cause: 'retour-cave-bloque',
+             titre: 'Retour cave sans issue',
+             texte: 'La valve tricuspide est atrétique et le septum interauriculaire est intact : le sang cave reste bloqué dans l’oreillette droite. Aucun remplissage efficace n’est possible. Il faut créer une communication interauriculaire en urgence.' };
+
+  if (etat.congestionSystemique > 0.55)
+    return { statut: 'critique', cause: 'restriction-retour-cave',
+             titre: 'Restriction du retour cave',
+             texte: 'Tout le retour cave doit franchir une communication interauriculaire restrictive : la pression auriculaire droite monte et le débit cardiaque chute. Il faut élargir la communication.' };
 
   if (!cx.systemique)
     return { statut: 'letal', cause: 'sans-issue-systemique',

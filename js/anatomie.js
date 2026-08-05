@@ -353,11 +353,27 @@ Anatomie.prototype.connexite = function () {
   }
   var courtCircuit = joignables('og', adjC);
 
+  /* Une connexite globale ne suffit pas a prouver qu'un retour veineux peut
+     remplir le coeur : le graphe est volontairement non oriente et autorise
+     donc aussi des parcours a rebours utiles a l'analyse des shunts. On teste
+     separement l'issue de chaque oreillette par une valve AV, directement ou
+     apres franchissement du septum interauriculaire.
+
+     Ce garde-fou est indispensable dans l'atresie tricuspide : si le septum
+     est intact, le retour cave aboutit dans une oreillette droite borgne. */
+  var avD = g.d.vd.av && g.d.o.av !== 'droit';
+  var avG = g.d.vg.av && g.d.o.av !== 'gauche';
+  var ciaOuverte = g.d.o.cia !== 'intacte';
+  var retourCave = avD || (ciaOuverte && avG);
+  var retourPulmonaire = avG || (ciaOuverte && avD);
+
   return {
     systemique: sysOK,
     sysDirect: sysDirect,
     pulmonaire: pulmOK,
     melange: !!courtCircuit['od'],
+    retourCave: retourCave,
+    retourPulmonaire: retourPulmonaire,
     atteints: depuisVP
   };
 };

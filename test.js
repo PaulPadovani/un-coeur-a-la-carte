@@ -20,6 +20,8 @@ console.log('=== canal OUVERT ===');
 scenario('Coeur normal',{ventriculeDroit:'V3',ventriculeGauche:'V4',fbv:'ferme',oreillettes:'O3'});
 scenario('VU equilibre (CIA large, FBV large)',{});
 scenario('Atresie tricuspide + AP normale',{oreillettes:'O2-atrG',ventriculeDroit:'V2'});
+scenario('Atresie tricuspide + CIA restrictive',{oreillettes:'O1-atrG',ventriculeDroit:'V2'});
+scenario('Atresie tricuspide + septum intact',{oreillettes:'O3-atrG',ventriculeDroit:'V2'});
 scenario('Atresie tricuspide + atresie pulmonaire',{oreillettes:'O2-atrG',ventriculeDroit:'V2',ap:'P3'});
 scenario('HypoVG (atresie mitrale, aorte filiforme)',{oreillettes:'O2-atrD',ventriculeDroit:'V3',ventriculeGauche:'V2',aorte:'A3'});
 scenario('HypoVG + septum intact',{oreillettes:'O3-atrD',ventriculeDroit:'V3',ventriculeGauche:'V2',aorte:'A3'});

@@ -21,6 +21,8 @@ var ANATOMIES = [
    { oreillettes: 'O2-atrG', ventriculeDroit: 'V2', ap: 'P3' }],
   ['Atrésie tricuspide, CIA restrictive',
    { oreillettes: 'O1-atrG', ventriculeDroit: 'V2' }],
+  ['Atrésie tricuspide, septum interauriculaire intact',
+   { oreillettes: 'O3-atrG', ventriculeDroit: 'V2' }],
   ['HypoVG (atrésie mitrale, aorte filiforme)',
    { oreillettes: 'O2-atrD', ventriculeDroit: 'V3', ventriculeGauche: 'V2',
      aorte: 'A3' }],
@@ -114,6 +116,8 @@ var COURT = {
   'sans-issue-systemique': 'sans issue systémique',
   'sans-melange': 'sans mélange',
   'restriction-auriculaire': 'restriction auriculaire',
+  'retour-cave-bloque': 'retour cave sans issue',
+  'restriction-retour-cave': 'restriction du retour cave',
   'defaillance': 'défaillance',
   'aucun-remplissage': 'aucun remplissage'
 };

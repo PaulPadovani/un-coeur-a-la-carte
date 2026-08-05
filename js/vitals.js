@@ -76,6 +76,8 @@ Simulation.prototype.pas = function (dt) {
   if (etat.DO2 < 9.0) stress += (9.0 - etat.DO2) / 9.0;
   if (etat.SaO2 < 72) stress += (72 - etat.SaO2) / 72 * 1.2;
   if (etat.congestion > 0.5) stress += etat.congestion * 1.6;
+  if (etat.congestionSystemique > 0.5)
+    stress += etat.congestionSystemique * 1.6;
   if (cls.statut === 'letal' || cls.statut === 'impossible') stress += 3;
   if (cls.cause === 'obstacle-sous-aortique') stress += 0.35;
   /* Di Filippo : « l'hyperdebit est cause d'augmentation du travail
@@ -101,6 +103,10 @@ Simulation.prototype.declarerDeces = function (etat, cls) {
     cause = 'oedeme-pulmonaire';
     titre = 'Œdème pulmonaire par restriction auriculaire';
     texte = 'Le retour veineux pulmonaire n’avait pas d’issue. Une atrioseptostomie en urgence était le seul geste utile.';
+  } else if (etat.congestionSystemique > 0.6) {
+    cause = 'restriction-retour-cave';
+    titre = 'Collapsus par obstruction du retour cave';
+    texte = 'Le sang cave ne pouvait pas quitter efficacement l’oreillette droite. Il fallait ouvrir largement le septum interauriculaire.';
   } else if (etat.SaO2 < 55) {
     cause = 'hypoxemie';
     titre = 'Hypoxémie réfractaire';
