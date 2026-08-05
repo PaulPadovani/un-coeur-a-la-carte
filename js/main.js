@@ -130,21 +130,42 @@ function dessiner(forcer) {
 }
 
 /* ------------------------------------------------------------------ moniteur */
-var ecgX = 0, ecgData = new Array(320).fill(0), ecgPhase = 0;
+/* Le scope balaie une FENETRE DE TEMPS fixe, pas un nombre d'images. Deux
+   defauts se corrigent ici. Le tampon avancait de trois echantillons par
+   image, donc la vitesse de balayage suivait la cadence d'affichage : le
+   trace defilait plus vite sur une machine rapide. Et sa longueur etait
+   figee a 320 points, etires sur toute la largeur du bandeau : au-dela de
+   360 px le trace devenait un escalier. Le tampon se redimensionne
+   desormais avec le canvas, en gardant environ un point tous les deux
+   pixels physiques. */
+var ECG_FENETRE = 3.2;                 /* secondes visibles a l'ecran */
+var ecgData = new Array(360).fill(0), ecgPhase = 0, ecgReste = 0;
+
+function ajusterTamponECG(W) {
+  var n = Math.max(240, Math.min(1000, Math.round(W / 2)));
+  if (n === ecgData.length) return;
+  var ancien = ecgData, m = ancien.length, neuf = new Array(n);
+  for (var i = 0; i < n; i++)          /* reechantillonnage lineaire */
+    neuf[i] = ancien[Math.min(m - 1, Math.round(i / (n - 1) * (m - 1)))];
+  ecgData = neuf;
+}
 
 function dessinerECG() {
   var p = ecgParams(sim);
   var cvs = $('#ecg'), ctx = cvs.getContext('2d');
   var W = cvs.width, H = cvs.height;
+  ajusterTamponECG(W);
   ctx.clearRect(0, 0, W, H);
-  /* grille discrete facon papier ECG */
-  ctx.strokeStyle = 'rgba(255,255,255,.055)'; ctx.lineWidth = 1;
+  /* grille discrete facon papier ECG, calee sur la densite de l'ecran */
+  var dpr = window.devicePixelRatio || 1, pas = 18 * dpr;
+  ctx.strokeStyle = 'rgba(255,255,255,.055)'; ctx.lineWidth = dpr;
   ctx.beginPath();
-  for (var gx = 0; gx < W; gx += 18) { ctx.moveTo(gx, 0); ctx.lineTo(gx, H); }
-  for (var gy = 0; gy < H; gy += 18) { ctx.moveTo(0, gy); ctx.lineTo(W, gy); }
+  for (var gx = 0; gx < W; gx += pas) { ctx.moveTo(gx, 0); ctx.lineTo(gx, H); }
+  for (var gy = 0; gy < H; gy += pas) { ctx.moveTo(0, gy); ctx.lineTo(W, gy); }
   ctx.stroke();
   ctx.strokeStyle = p.plat ? '#D9584A' : '#5FD08A';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 * dpr;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.beginPath();
   for (var i = 0; i < ecgData.length; i++) {
     var x = i / (ecgData.length - 1) * W;
@@ -157,23 +178,34 @@ function dessinerECG() {
      constantes : sur un moniteur elle est toujours posée sur le tracé. */
   ctx.textAlign = 'left';
   ctx.fillStyle = p.plat ? '#D9584A' : '#5FD08A';
-  ctx.font = 'bold 30px ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
+  ctx.font = 'bold ' + Math.round(30 * dpr) + 'px ui-sans-serif,-apple-system,' +
+             '"Segoe UI",Helvetica,Arial,sans-serif';
   var fcTxt = p.plat ? '0' : String(p.fc);
-  ctx.fillText(fcTxt, 10, 32);
+  ctx.fillText(fcTxt, 10 * dpr, 32 * dpr);
   var largeur = ctx.measureText(fcTxt).width;
-  ctx.font = '12px ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif';
+  ctx.font = Math.round(12 * dpr) + 'px ui-sans-serif,-apple-system,' +
+             '"Segoe UI",Helvetica,Arial,sans-serif';
   ctx.globalAlpha = 0.75;
-  ctx.fillText('bpm', 14 + largeur, 32);
+  ctx.fillText('bpm', 14 * dpr + largeur, 32 * dpr);
   ctx.globalAlpha = 1;
 }
 
+/* Le balayage avance en SECONDES, pas en images : un poste rapide ne doit
+   pas dérouler l'ECG plus vite qu'un poste lent. Le reliquat fractionnaire
+   est reporté d'une image à l'autre pour ne pas perdre de temps. */
 function avancerECG(dtms) {
   var p = ecgParams(sim);
-  var n = 3;
+  var dt = Math.min(0.12, (dtms || 0) / 1000);
+  ecgReste += dt * ecgData.length / ECG_FENETRE;
+  var n = Math.floor(ecgReste);
+  if (n <= 0) return;
+  if (n > ecgData.length) n = ecgData.length;   /* apres une longue pause */
+  ecgReste -= n;
+  var dtParPoint = dt / n;
   for (var k = 0; k < n; k++) {
     var v = 0;
     if (!p.plat && p.fc > 0) {
-      ecgPhase += (p.fc / 60) * (dtms / 1000) / n;
+      ecgPhase += (p.fc / 60) * dtParPoint;
       if (ecgPhase >= 1) ecgPhase -= 1;
       v = ecgBattement(ecgPhase, p.ampl);
     }
@@ -381,15 +413,27 @@ function demarrer() {
 }
 
 /* ------------------------------------------------------------------ canvas */
-/* Le bandeau bas s'etire : on redimensionne le canvas a la densite de
-   l'ecran, sinon le trait est flou en projection. */
-function redimensionner() {
-  var c = $('#transition');
+/* Les deux canvas s'etirent en CSS : il faut redimensionner leur MEMOIRE a
+   la densite de l'ecran, sinon le navigateur etire une image de 360 px sur
+   toute la largeur du bandeau et le trace part en escalier.
+   Le scope etait oublie ici : il gardait ses 360x110 d'origine, ce qui
+   ecrasait l'ECG horizontalement et le rendait flou des que la fenetre
+   depassait cette largeur. */
+function redimensionnerCanvas(sel) {
+  var c = $(sel);
+  if (!c) return false;
   var r = c.getBoundingClientRect();
   var dpr = window.devicePixelRatio || 1;
-  if (r.width < 10) return;
-  c.width = Math.round(r.width * dpr);
-  c.height = Math.round(r.height * dpr);
+  if (r.width < 10) return false;
+  var w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (c.width === w && c.height === h) return false;   /* eviter d'effacer */
+  c.width = w; c.height = h;
+  return true;
+}
+
+function redimensionner() {
+  redimensionnerCanvas('#transition');
+  if (redimensionnerCanvas('#ecg')) dessinerECG();
 }
 
 /* ------------------------------------------------------------------ init */
