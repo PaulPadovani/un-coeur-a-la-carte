@@ -6,7 +6,7 @@
 <title>Un cœur à la carte — congenital heart physiology simulator</title>
 <link rel="alternate" hreflang="fr" href="../">
 <link rel="alternate" hreflang="en" href="./">
-<link rel="stylesheet" href="../css/vu.css?v=20260731-2">
+<link rel="stylesheet" href="../css/vu.css?v=20260805-1">
 </head>
 <body>
 
@@ -17,11 +17,11 @@
   </div>
   <p>Build the heart, start the circulation, stabilise the child.</p>
   <nav class="langue" aria-label="Language">
-    <a href="../index.html?v=20260731-2" hreflang="fr" lang="fr" title="Version française">FR</a>
+    <a href="../index.html?v=20260805-1" hreflang="fr" lang="fr" title="Version française">FR</a>
     <span aria-current="page">EN</span>
   </nav>
   <button id="btn-flux" class="pilule on" aria-pressed="true"
-          title="Show or hide flow particles">Flow</button>
+          title="Show or hide flow tracers">Flow</button>
   <div class="chrono"><span id="v-temps">H0</span></div>
 </header>
 
@@ -45,13 +45,6 @@
 
     <h2>2 — Stabilise</h2>
     <div id="gestes"></div>
-
-    <p class="note legende-flux">
-      In the diagram, particles move at the speed of the <b>blood flow</b>
-      carrying them—not at the monitor rate. Pulmonary overcirculation races;
-      a stolen aortic flow drifts. Particles actually cross the bulboventricular
-      foramen and the atrial communication. Use <b>Flow</b> above to hide them.
-    </p>
   </section>
 
   <!-- Centre panel: assembled heart -->
@@ -109,13 +102,14 @@
 </footer>
 
 <script>window.APP_LANG = 'en';</script>
-<script src="../js/i18n.js?v=20260731-2"></script>
-<script src="../js/cartes.js?v=20260731-2"></script>
-<script src="../js/anatomie.js?v=20260731-2"></script>
-<script src="../js/model.js?v=20260731-2"></script>
-<script src="../js/vitals.js?v=20260731-2"></script>
-<script src="../js/render.js?v=20260731-2"></script>
-<script src="../js/transition.js?v=20260731-2"></script>
-<script src="../js/main.js?v=20260731-2"></script>
+<script src="../js/i18n.js?v=20260805-1"></script>
+<script src="../js/cartes.js?v=20260805-1"></script>
+<script src="../js/anatomie.js?v=20260805-1"></script>
+<script src="../js/model.js?v=20260805-1"></script>
+<script src="../js/champ.js?v=20260805-1"></script>
+<script src="../js/vitals.js?v=20260805-1"></script>
+<script src="../js/render.js?v=20260805-1"></script>
+<script src="../js/transition.js?v=20260805-1"></script>
+<script src="../js/main.js?v=20260805-1"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@
 <title>Un cœur à la carte — simulateur de physiologie cardiaque congénitale</title>
 <link rel="alternate" hreflang="fr" href="./">
 <link rel="alternate" hreflang="en" href="en/">
-<link rel="stylesheet" href="css/vu.css?v=20260731-2">
+<link rel="stylesheet" href="css/vu.css?v=20260805-1">
 </head>
 <body>
 
@@ -18,10 +18,10 @@
   <p>Composez le cœur, lancez la circulation, stabilisez l’enfant.</p>
   <nav class="langue" aria-label="Langue">
     <span aria-current="page">FR</span>
-    <a href="en/index.html?v=20260731-2" hreflang="en" lang="en" title="English version">EN</a>
+    <a href="en/index.html?v=20260805-1" hreflang="en" lang="en" title="English version">EN</a>
   </nav>
   <button id="btn-flux" class="pilule on" aria-pressed="true"
-          title="Afficher ou masquer les particules de flux">Flux</button>
+          title="Afficher ou masquer les traceurs de débit">Flux</button>
   <div class="chrono"><span id="v-temps">H0</span></div>
 </header>
 
@@ -45,14 +45,6 @@
 
     <h2>2 — Stabiliser</h2>
     <div id="gestes"></div>
-
-    <p class="note legende-flux">
-      Dans le schéma, les particules avancent à la vitesse du <b>débit</b> qui
-      les porte — et non au rythme du scope. Un poumon en hyperdébit file,
-      une aorte volée se traîne. Elles franchissent réellement le foramen et
-      la communication interauriculaire. Bouton <b>Flux</b> en haut pour les
-      éteindre.
-    </p>
   </section>
 
   <!-- ---------------- zone centrale : le cœur ---------------- -->
@@ -110,13 +102,14 @@
   <canvas id="transition" width="1600" height="180"></canvas>
 </footer>
 
-<script src="js/i18n.js?v=20260731-2"></script>
-<script src="js/cartes.js?v=20260731-2"></script>
-<script src="js/anatomie.js?v=20260731-2"></script>
-<script src="js/model.js?v=20260731-2"></script>
-<script src="js/vitals.js?v=20260731-2"></script>
-<script src="js/render.js?v=20260731-2"></script>
-<script src="js/transition.js?v=20260731-2"></script>
-<script src="js/main.js?v=20260731-2"></script>
+<script src="js/i18n.js?v=20260805-1"></script>
+<script src="js/cartes.js?v=20260805-1"></script>
+<script src="js/anatomie.js?v=20260805-1"></script>
+<script src="js/model.js?v=20260805-1"></script>
+<script src="js/champ.js?v=20260805-1"></script>
+<script src="js/vitals.js?v=20260805-1"></script>
+<script src="js/render.js?v=20260805-1"></script>
+<script src="js/transition.js?v=20260805-1"></script>
+<script src="js/main.js?v=20260805-1"></script>
 </body>
 </html>

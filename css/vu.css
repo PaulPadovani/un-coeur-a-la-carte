@@ -138,8 +138,6 @@ main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
   padding-left:8px; border-left:2px solid var(--bord-fort);
 }
 .note.alerte{color:var(--critique);border-left-color:var(--critique)}
-.legende-flux{margin-top:14px;border-left-color:var(--terre)}
-.legende-flux b{color:var(--marine)}
 
 .transport{display:flex;gap:8px;margin-top:10px}
 .transport button{
@@ -181,10 +179,61 @@ main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
    disponible qui décide de sa taille, pas la largeur. On lui laisse donc
    le moins de marge possible, et le bandeau du bas se replie. */
 .scene{
+  position:relative; isolation:isolate;
   display:flex; align-items:center; justify-content:center;
-  padding:4px 8px; min-height:0; background:var(--fond);
+  padding:4px 8px; min-height:0; overflow:hidden;
+  background:
+    radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.92) 0 28%,rgba(250,249,245,.72) 48%,rgba(240,238,230,.2) 72%),
+    linear-gradient(rgba(24,58,90,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(24,58,90,.035) 1px,transparent 1px),
+    var(--fond);
+  background-size:auto,34px 34px,34px 34px,auto;
 }
-#coeur{width:100%;height:100%;color:#26241F}   /* couleur du trait */
+.scene::after{
+  content:'';position:absolute;inset:12px;border:1px solid rgba(24,58,90,.09);
+  border-radius:14px;pointer-events:none;z-index:0;
+}
+#coeur{
+  position:relative;z-index:1;width:100%;height:100%;color:#26241F;
+  filter:drop-shadow(0 10px 18px rgba(31,30,27,.07));
+}
+#coeur #fill [data-comp]{transition:fill .32s linear,opacity .32s linear}
+#coeur #flux{pointer-events:none}
+#coeur .flux-zone,#coeur .flux-streamlet{pointer-events:none}
+#coeur .flux-route{visibility:hidden;stroke:none}
+#coeur .flux-streamlet path{
+  fill:none;stroke-linecap:round;stroke-linejoin:round;
+}
+/* Une pathline en trois tronçons qui S'ÉPAISSISSENT et s'éclaircissent vers
+   la tête. C'est ce gradient qui dit le sens du mouvement, bien avant la
+   vitesse de défilement. L'ancien découpage faisait l'inverse — une queue
+   large et floue — et donnait une bavure au lieu d'un traceur.
+   La teinte de chaque tronçon est écrite par render.js : elle porte la
+   vitesse à l'instant où la particule est passée par là. */
+/* Épaisseurs calibrées pour la PROJECTION : le cœur assemblé mesure 1200
+   unités de large et sera vu à plusieurs mètres. Un trait sous 3 unités
+   disparaît. */
+#coeur .flux-queue{stroke-width:3.6;opacity:.34}
+#coeur .flux-corps{stroke-width:6.2;opacity:.72}
+#coeur .flux-crete{stroke-width:8.4;opacity:1}
+#coeur .flux-tete{opacity:1}
+/* Dans une cavité la lumière est large : on peut se permettre un trait
+   franchement plus généreux sans transformer la chambre en pelote. */
+#coeur .flux-zone:not([data-mode="route"]) .flux-queue{stroke-width:4.4}
+#coeur .flux-zone:not([data-mode="route"]) .flux-corps{stroke-width:7.2}
+#coeur .flux-zone:not([data-mode="route"]) .flux-crete{stroke-width:9.6}
+/* Un jet reste plus fin que le reste — c'est sa vitesse et sa couleur qui
+   le signalent, pas son épaisseur. */
+#coeur .flux-zone[data-jet="1"] .flux-queue{stroke-width:2.8;opacity:.30}
+#coeur .flux-zone[data-jet="1"] .flux-corps{stroke-width:4.8;opacity:.78}
+#coeur .flux-zone[data-jet="1"] .flux-crete{stroke-width:7}
+/* Recirculation résiduelle : présente, jamais bavarde. */
+#coeur .flux-zone[data-mode="cavite-borgne"] .flux-queue,
+#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-queue{opacity:.12}
+#coeur .flux-zone[data-mode="cavite-borgne"] .flux-corps,
+#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-corps{opacity:.34}
+#coeur .flux-zone[data-mode="cavite-borgne"] .flux-crete,
+#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-crete{opacity:.62}
 
 /* ---------------- moniteur ---------------- */
 #ecg{
@@ -302,6 +351,10 @@ body.graphe-replie .transition-tete{flex-wrap:nowrap;margin-bottom:0}
 
 /* en pause : on le dit sans crier */
 body.en-pause .chrono{color:var(--doux)}
+
+@media (prefers-reduced-motion:reduce){
+  #coeur #fill [data-comp]{transition:none}
+}
 
 @media (max-width:1220px){
   main{grid-template-columns:262px 1fr 292px}

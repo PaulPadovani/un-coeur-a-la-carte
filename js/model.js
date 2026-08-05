@@ -129,6 +129,11 @@ function resoudre(anat, env) {
      limite donc le remplissage ; un septum intact l'annule. Cette contrainte
      de PRECHARGE est distincte du partage Qp/Qs calcule plus bas. */
   var congestionSystemique = congestionSys(d, rA);
+  /* Décomposition du pont aorto-pulmonaire pour le rendu. Elle ne change
+     pas la résolution : elle répartit seulement le débit déjà calculé entre
+     canal et BTT, afin que chaque trajet puisse être animé honnêtement. */
+  var fluxPontNet = 0;
+  function conductance(r) { return r >= 1e9 ? 0 : 1 / r; }
 
   if (ventCommun) {
     /* Une seule chambre ejecte dans les deux troncs. Chaque lit peut etre
@@ -136,15 +141,18 @@ function resoudre(anat, env) {
          systemique  = valve aortique  |  valve pulmonaire + canal
          pulmonaire  = valve pulmonaire|  valve aortique + canal
        C'est ce second chemin qui fait vivre l'hypoplasie du coeur gauche. */
-    function cond(r) { return r >= 1e9 ? 0 : 1 / r; }
-    var gs = cond(serie([rVoieSys, RVS])) +
-             cond(serie([rVoiePulm, rPont, RVS]));
-    var gp = cond(serie([rVoiePulm, RVP])) +
-             cond(serie([rVoieSys, rPont, RVP]));
+    var gsDirect = conductance(serie([rVoieSys, RVS]));
+    var gsPont = conductance(serie([rVoiePulm, rPont, RVS]));
+    var gpDirect = conductance(serie([rVoiePulm, RVP]));
+    var gpPont = conductance(serie([rVoieSys, rPont, RVP]));
+    var gs = gsDirect + gsPont;
+    var gp = gpDirect + gpPont;
     var tot = gs + gp;
     var debit = Math.min(CFG.CO_MAX, tot * 1.05);
     Qs = tot > 0 ? debit * gs / tot : 0;
     Qp = tot > 0 ? debit * gp / tot : 0;
+    /* positif = aorte vers branches pulmonaires ; négatif = sens inverse */
+    fluxPontNet = tot > 0 ? debit * (gpPont - gsPont) / tot : 0;
   } else {
     /* Deux pompes en serie. Par conservation, Qp = Qs, SAUF shunt.
        C'est la correction majeure : sans communication, les resistances
@@ -156,13 +164,14 @@ function resoudre(anat, env) {
        RVS : a la naissance elles sont voisines, le shunt est donc minime.
        C'est ce qui donne un Qp/Qs de 1 a un coeur normal a H0.           */
     var moteur = Math.max(0, (RVS - RVP) / RVS);
-    var f = 0;
-    if (rA('CIA') < 1e9) f += 0.75 / (1 + rA('CIA') * 2.2) * moteur;
-    if (rFBV < 1e9)      f += 1.80 / (1 + rFBV * 1.6) * moteur;
-    if (rPont < 1e9)     f += 1.60 / (1 + rPont * 1.5) * moteur;
+    var fCIA = rA('CIA') < 1e9 ? 0.75 / (1 + rA('CIA') * 2.2) * moteur : 0;
+    var fFBV = rFBV < 1e9 ? 1.80 / (1 + rFBV * 1.6) * moteur : 0;
+    var fPont = rPont < 1e9 ? 1.60 / (1 + rPont * 1.5) * moteur : 0;
+    var f = fCIA + fFBV + fPont;
     Qp = Qs * (1 + f);
     var somme = Qs + Qp;
     if (somme > CFG.CO_MAX * 1.6) { var k = CFG.CO_MAX * 1.6 / somme; Qs *= k; Qp *= k; }
+    fluxPontNet = f > 1e-9 ? Math.max(0, Qp - Qs) * fPont / f : 0;
   }
 
   /* La resistance interauriculaire agit ici comme limite de remplissage.
@@ -172,6 +181,7 @@ function resoudre(anat, env) {
   var facteurRemplissage = 1 - congestionSystemique;
   Qs *= facteurRemplissage;
   Qp *= facteurRemplissage;
+  fluxPontNet *= facteurRemplissage;
 
   qpqs = Qs > 1e-6 ? Qp / Qs : (Qp > 1e-6 ? 99 : 0);
   qpqs = Math.min(qpqs, 15);
@@ -238,6 +248,15 @@ function resoudre(anat, env) {
 
   var DO2 = Qs * CFG.Hb * 1.34 * (SaO2 / 100);
 
+  /* Le canal et le BTT sont en parallèle : leur part relative suit leur
+     conductance. Conserver le signe permet aussi d'animer un remplissage
+     rétrograde sans inventer un second sens dans le renderer. */
+  var gCanal = conductance(rA('canal artériel'));
+  var gShunt = conductance(rA('shunt BTT'));
+  var gPont = gCanal + gShunt;
+  var fluxCanal = gPont > 0 ? fluxPontNet * gCanal / gPont : 0;
+  var fluxShunt = gPont > 0 ? fluxPontNet * gShunt / gPont : 0;
+
   return {
     qpqs: qpqs, Qp: Qp, Qs: Qs, debitTotal: Qs + Qp,
     SaO2: SaO2, SvO2: SvO2, SapO2: SapO2, SpvO2: SpvO2, DAV: Ea,
@@ -253,6 +272,12 @@ function resoudre(anat, env) {
     retrogradeAorte: (rPont < 1e9) && (rVoieSys > 2.5 * (rVoiePulm + rPont)),
     obstacleSousAortique: obstacleSousAortique,
     obstacleSousPulm: obstacleSousPulm,
+    fluxVisuel: {
+      canal: Math.abs(fluxCanal),
+      shunt: Math.abs(fluxShunt),
+      sensCanal: fluxCanal < 0 ? -1 : 1,
+      sensShunt: fluxShunt < 0 ? -1 : 1
+    },
     congestion: congestion,
     congestionSystemique: congestionSystemique,
     canal: d.canal

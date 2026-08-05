@@ -119,7 +119,12 @@ function signatureAnat() {
 function dessiner(forcer) {
   var svg = $('#coeur');
   var s = signatureAnat();
-  if (forcer || s !== _signature) { svg.innerHTML = assembler(anat); _signature = s; }
+  if (forcer || s !== _signature) {
+    svg.innerHTML = assembler(anat);
+    svg._cacheFlux = null;
+    preparerFlux(svg);
+    _signature = s;
+  }
   _etat = sim.etat || resoudre(anat, sim.env());
   colorier(svg, anat, _etat);
 }
