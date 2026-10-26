@@ -110,7 +110,11 @@ function entrerContinu(p, item) {
   p.item = item;
   p.age = 0;
   if (item.mode === 'route') {
-    p.s = item.sens < 0 ? item.longueur : 0;
+    /* La route locale inclut la convergence au sein des deux chambres.
+       Le traceur continu a déjà parcouru la chambre amont : il rejoint
+       le conduit près du septum, sans saut arrière de 120–170 unités. */
+    p.s = item.orifice ? item.longueur * (item.sens < 0 ? 0.68 : 0.32)
+                       : (item.sens < 0 ? item.longueur : 0);
     p.decalage = (pseudo(p.seed + p.cycle * 19.1) - 0.5) * item.rayon * 0.65;
     var pt = pointRoute(item, p.s, p.decalage);
     ajouterPointContinu(p, pointCoeur(item, pt.x, pt.y), item.vmax || 80);
@@ -223,7 +227,7 @@ function avancerUnContinu(st, p, d, etat, dt) {
        attribuée à la CIV vers l'ouverture à sa hauteur réelle. */
     if (p.versCIV && item.mode === 'ventricule-traversant' &&
         p.y < 650 && p.y > 360) {
-      var bout = pointRoute(st.fbv, sens > 0 ? 0 : st.fbv.longueur, 0);
+      var bout = pointRoute(st.fbv, st.fbv.longueur * (sens > 0 ? 0.32 : 0.68), 0);
       var cible = pointLocal(item, pointCoeur(st.fbv, bout.x, bout.y).x,
                             pointCoeur(st.fbv, bout.x, bout.y).y);
       var dx = cible.x - item.x0 - p.x, dy = cible.y - p.y;
