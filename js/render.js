@@ -269,7 +269,7 @@ function balisesStreamlets(n) {
            '<path class="flux-corps"/>' +
            '<path class="flux-crete"/>' +
            '<path class="flux-tete" d="M-12,-8 L0,0 L-12,8"/>' +
-           '<circle class="flux-grain" r="6"/>' +
+           '<circle class="flux-grain" r="7"/>' +
            '</g>');
   }
   return o.join('');
