@@ -1,7 +1,7 @@
 # Références physiologiques principales
 
 Cette bibliographie volontairement courte documente les principaux ancrages du
-moteur. Elle ne constitue ni une revue systématique ni une bibliographie
+moteur et du rendu. Elle ne constitue ni une revue systématique ni une bibliographie
 clinique exhaustive.
 
 1. Barnea O, Santamore WP, Rossi A, Salloum E, Chien S, Austin EH.
@@ -25,6 +25,18 @@ clinique exhaustive.
    2010;362(21):1980-1992.
    [DOI: 10.1056/NEJMoa0912461](https://doi.org/10.1056/NEJMoa0912461) ·
    [PMID: 20505177](https://pubmed.ncbi.nlm.nih.gov/20505177/)
+
+## Visualisation des flux
+
+5. Petersson S, Sigfridsson A, Dyverfeldt P, Carlhäll CJ, Ebbers T.
+   Retrospectively gated intracardiac 4D flow MRI using spiral trajectories.
+   *Magn Reson Med*. 2016;75(1):196-206.
+   [DOI: 10.1002/mrm.25612](https://doi.org/10.1002/mrm.25612) ·
+   [PMID: 25684309](https://pubmed.ncbi.nlm.nih.gov/25684309/)
+
+Cette étude illustre des trajectoires temporelles colorées selon la vitesse.
+Le simulateur en reprend la convention graphique, avec un champ 2D calculé
+et sans données IRM individuelles.
 
 Les textes intégraux, PDF, extractions et classeurs bibliographiques ne sont
 pas redistribués dans ce dépôt.

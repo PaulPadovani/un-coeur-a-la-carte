@@ -1,8 +1,9 @@
 /* render.js — cartes anatomiques, montages et flux pédagogiques.
 
-   L'aplat bleu–mauve–rouge porte l'oxygénation. Des filets ivoire effilés
-   portent le déplacement et une tête en chevron en indique le sens, même
-   en pause. La densité reste volontairement faible pour la projection.
+   L'aplat bleu–mauve–rouge porte l'oxygénation. Des trajectoires effilées
+   cyan–or portent la vitesse relative du modèle ; des grains et quelques
+   chevrons montrent leur direction, même en pause. La densité reste faible
+   pour la projection.
 
    Les conduits suivent leur axe et un profil transverse. Les cavités
    conservent le champ de champ.js et leurs ports anatomiques ; tous les
@@ -256,10 +257,10 @@ var _zoneFlux = 0;
 var FLUX_DENSITE = 0.28;
 function dose(n) { return Math.max(4, Math.round(n * FLUX_DENSITE)); }
 
-/* Un traceur = une pathline. Elle s'AMINCIT vers sa queue : c'est ce
-   gradient de largeur, plus que la vitesse elle-même, qui dit à l'œil dans
-   quel sens le sang va. L'ancien découpage faisait l'inverse — une queue
-   large et floue, une tête fine — et produisait une bavure. */
+/* Chaque traceur laisse une trajectoire temporelle. Trois tronçons portent
+   la vitesse relative calculée le long de la trace ; un grain en indique
+   l'extrémité. Quelques chevrons restent sur les conduits et les shunts
+   pour conserver le sens de passage sur une image figée. */
 function balisesStreamlets(n) {
   var o = [];
   for (var i = 0; i < n; i++) {
@@ -267,7 +268,8 @@ function balisesStreamlets(n) {
            '<path class="flux-queue"/>' +
            '<path class="flux-corps"/>' +
            '<path class="flux-crete"/>' +
-           '<path class="flux-tete" d="M-19,-12 L0,0 L-19,12"/>' +
+           '<path class="flux-tete" d="M-12,-8 L0,0 L-12,8"/>' +
+           '<circle class="flux-grain" r="6"/>' +
            '</g>');
   }
   return o.join('');
@@ -589,8 +591,24 @@ function poserTrait(el, cle, val) {
    plus longue, ce qui est un bon indice de vélocimétrie — mais avec un
    plancher qui garantit un filet visible même en bas débit.
 ------------------------------------------------------------------ */
-var TRACE_MAX = 36;
-function pasTrace(v) { return limite(v * 0.48, 180, 340) / TRACE_MAX; }
+var TRACE_MAX = 40;
+function pasTrace(v) { return limite(v * 0.56, 220, 400) / TRACE_MAX; }
+
+/* Niveaux sans unité clinique : la même échelle qualitative est appliquée
+   aux trajectoires des cavités, des voies d'éjection et des montages. */
+function niveauVitesse(v) {
+  if (v < 80) return 0;
+  if (v < 160) return 1;
+  if (v < 280) return 2;
+  if (v < 430) return 3;
+  return 4;
+}
+function teinterVitesse(el, v) {
+  var niveau = niveauVitesse(v);
+  if (el._niveauVitesse === niveau) return;
+  el._niveauVitesse = niveau;
+  el.setAttribute('data-vitesse', String(niveau));
+}
 
 /* ------------------------------------------------------------------
    PULSATILITÉ.
@@ -709,21 +727,31 @@ function rendreStreamlet(p) {
     poserTrait(p.queue, 'd', ''); poserTrait(p.corps, 'd', '');
     poserTrait(p.crete, 'd', '');
     p.tete.setAttribute('visibility', 'hidden');
+    p.grain.setAttribute('visibility', 'hidden');
     return;
   }
   var i1 = Math.floor(n * 0.42), i2 = Math.floor(n * 0.76);
   p.queue.setAttribute('d', chemin(p.trace, 0, i1 + 1));
   p.corps.setAttribute('d', chemin(p.trace, i1, i2 + 1));
   p.crete.setAttribute('d', chemin(p.trace, i2, n));
+  teinterVitesse(p.queue, p.vit[Math.floor(i1 * 0.5)]);
+  teinterVitesse(p.corps, p.vit[Math.floor((i1 + i2) * 0.5)]);
+  teinterVitesse(p.crete, p.vit[n - 1]);
   var h = p.trace[n - 1];
   var avant = p.trace[Math.max(0, n - 4)];
   var angle = Math.atan2(h.y - avant.y, h.x - avant.x) * 180 / Math.PI;
-  /* Pas de chevron isolé lors du réensemencement d'une trajectoire. */
-  p.tete.setAttribute('visibility', n < 9 ? 'hidden' : 'visible');
-  p.tete.setAttribute('transform', 'translate(' + h.x.toFixed(1) + ',' +
-    h.y.toFixed(1) + ') rotate(' + angle.toFixed(1) + ')');
-  /* Une seule encre claire : la saturation appartient à l'aplat, le débit
-     au déplacement. La flèche rend le sens lisible sans animation. */
+  var visible = n >= 9;
+  p.tete.setAttribute('visibility', visible && p.fleche ? 'visible' : 'hidden');
+  p.grain.setAttribute('visibility', visible && !p.fleche ? 'visible' : 'hidden');
+  if (p.fleche) {
+    p.tete.setAttribute('transform', 'translate(' + h.x.toFixed(1) + ',' +
+      h.y.toFixed(1) + ') rotate(' + angle.toFixed(1) + ')');
+    teinterVitesse(p.tete, p.vit[n - 1]);
+  } else {
+    p.grain.setAttribute('cx', h.x.toFixed(1));
+    p.grain.setAttribute('cy', h.y.toFixed(1));
+    teinterVitesse(p.grain, p.vit[n - 1]);
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -943,6 +971,9 @@ function preparerFlux(svgRoot) {
         corps: node.querySelector('.flux-corps'),
         crete: node.querySelector('.flux-crete'),
         tete: node.querySelector('.flux-tete'),
+        grain: node.querySelector('.flux-grain'),
+        fleche: mode === 'route' &&
+          (item.orifice || item.comp === 'canal' || item.comp === 'shunt' || j % 3 === 0),
         seed: (i + 1) * 97.13 + (j + 1) * 31.77,
         cycle: 0, trace: [], vit: [], stase: 0, actif: false };
       item.particules.push(p);

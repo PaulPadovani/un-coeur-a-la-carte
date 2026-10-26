@@ -22,9 +22,12 @@ clinique. Qp et Qs sont lus dans le moniteur, sans répétition autour du cœur.
 
 ## Conventions graphiques
 
-L’aplat bleu–mauve–rouge indique l’oxygénation. Les filets clairs suivent les
-trajets existants ; leur chevron indique la direction. Le déplacement et la
-densité sont qualitatifs, sans échelle de vitesse clinique. Le bouton
+L’aplat bleu–mauve–rouge indique l’oxygénation. Les trajectoires temporelles,
+inspirées de l’IRM 4D flux, suivent les champs calculés par le simulateur.
+Leur teinte cyan–or représente une vitesse relative du modèle, sans unité
+clinique ni mesure IRM. Un grain marque leur extrémité ; quelques chevrons
+restent sur les conduits et communications pour lire leur sens à l’arrêt.
+Le déplacement et la densité sont qualitatifs. Le bouton
 « Figer les flux » conserve une lecture statique sans suspendre l’horloge.
 Un changement anatomique recalcule cette lecture. La préférence système de
 mouvement réduit produit un instantané des flux et désactive le balayage ECG.

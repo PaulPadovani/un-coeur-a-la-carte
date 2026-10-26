@@ -39,12 +39,40 @@ attendu(/data-flux="shunt"[^>]+data-vitesse="2.35"/.test(svg),
 attendu(svg.indexOf('class="flux-streamlet"') >= 0 &&
         svg.indexOf('class="flux-crete"') >= 0,
         'les flux doivent conserver une histoire lagrangienne');
+attendu(svg.indexOf('class="flux-grain"') >= 0,
+        'une trajectoire doit montrer son extrémité sans chevron systématique');
 attendu(svg.indexOf('stroke-dasharray') < 0 &&
         svg.indexOf('flux-guide') < 0 && svg.indexOf('flux-particule') < 0 &&
         svg.indexOf('flux-volume') < 0 && svg.indexOf('flux-memoire') < 0,
         'aucun ancien rail, chapelet de pilules ni nuage de hachures ne doit subsister');
 attendu(svg.indexOf('flux-lueur') < 0,
         'plus de filtre de flou : il coûtait trop cher en projection');
+
+/* Une même trajectoire doit montrer l'accélération entre sa queue et sa
+   tête. Le chevron reste réservé aux passages dont le sens est crucial. */
+function fauxTrait() {
+  return { attributs: {}, setAttribute: function (k, v) { this.attributs[k] = v; } };
+}
+var traceur = { queue: fauxTrait(), corps: fauxTrait(), crete: fauxTrait(),
+  tete: fauxTrait(), grain: fauxTrait(), fleche: false,
+  trace: [], vit: [] };
+for (var z = 0; z < 12; z++) {
+  traceur.trace.push({ x: z * 8, y: z * 2 });
+  traceur.vit.push(z < 4 ? 60 : z < 9 ? 200 : 500);
+}
+rendreStreamlet(traceur);
+attendu(traceur.queue.attributs['data-vitesse'] === '0' &&
+        traceur.corps.attributs['data-vitesse'] === '2' &&
+        traceur.crete.attributs['data-vitesse'] === '4',
+        'la trajectoire doit coder une accélération de cyan vers or');
+attendu(traceur.grain.attributs.visibility === 'visible' &&
+        traceur.tete.attributs.visibility === 'hidden',
+        'dans une cavité, le grain remplace le chevron répété');
+traceur.fleche = true;
+rendreStreamlet(traceur);
+attendu(traceur.tete.attributs.visibility === 'visible' &&
+        traceur.grain.attributs.visibility === 'hidden',
+        'une communication doit conserver un chevron lisible à l’arrêt');
 
 var b = new Anatomie();
 b.gestes.cerclage = true;
