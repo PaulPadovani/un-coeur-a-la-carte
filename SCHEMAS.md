@@ -22,18 +22,9 @@ clinique. Qp et Qs sont lus dans le moniteur, sans répétition autour du cœur.
 
 ## Conventions graphiques
 
-L’aplat bleu–mauve–rouge indique l’oxygénation. Les trajectoires temporelles,
-inspirées de l’IRM 4D flux, suivent les champs calculés par le simulateur.
-Les trajectoires principales conservent leur traceur d’une carte à la suivante :
-veine, oreillette, valve auriculo-ventriculaire, ventricule et voie d’éjection.
-Une fraction emprunte la CIV ou la CIA quand le débit et le sens du modèle le
-permettent. Les trajets plus courts gardent visibles les mouvements locaux et
-les recirculations. Le dessin masque les traceurs hors des lumières ; un port
-qui ne se raccorde pas sur une variante anatomique coupe la trace.
-Leur teinte cyan–or représente une vitesse relative du modèle, sans unité
-clinique ni mesure IRM. Un grain marque leur extrémité ; quelques chevrons
-restent sur les conduits et communications pour lire leur sens à l’arrêt.
-Le déplacement et la densité sont qualitatifs. Le bouton
+L’aplat bleu–mauve–rouge indique l’oxygénation. Les filets clairs suivent les
+trajets existants ; leur chevron indique la direction. Le déplacement et la
+densité sont qualitatifs, sans échelle de vitesse clinique. Le bouton
 « Figer les flux » conserve une lecture statique sans suspendre l’horloge.
 Un changement anatomique recalcule cette lecture. La préférence système de
 mouvement réduit produit un instantané des flux et désactive le balayage ECG.
@@ -78,9 +69,8 @@ pour distinguer VCS et VCI.
 ## Vérification
 
 Les quatre scripts directionnels `test.js` à `test4.js`, ainsi que
-`test-flux.js`, `test-continu.js`, `test-champ-geometrie.js`,
-`test-retour-atrial.js` et `test-canal-schema.js`, vérifient le moteur, les
-ports, la continuité entre cartes et la fermeture dessinée du canal.
-Contrôler également dans le navigateur les
+`test-flux.js`, `test-champ-geometrie.js`, `test-retour-atrial.js` et
+`test-canal-schema.js`, vérifient le moteur, les ports et la fermeture dessinée
+du canal. Contrôler également dans le navigateur les
 versions française et anglaise, les formats de projection et de téléphone,
 le gel des flux, le retour au cœur normal, le BTT et la transposition.

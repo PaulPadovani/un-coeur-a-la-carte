@@ -202,31 +202,17 @@ main{flex:1; display:grid; grid-template-columns:280px minmax(0,1fr) 320px; min-
 #coeur #canal-conduit{pointer-events:none}
 #coeur #canal-conduit .flux-queue{stroke-width:4}
 #coeur #canal-conduit .flux-corps{stroke-width:6}
-#coeur #canal-conduit .flux-crete{stroke-width:8}
-#coeur #canal-conduit .flux-tete{stroke-width:6}
+#coeur #canal-conduit .flux-crete{stroke-width:9}
+#coeur #canal-conduit .flux-tete{stroke-width:7}
 #coeur .flux-zone,#coeur .flux-streamlet{pointer-events:none}
-#coeur .flux-zone{opacity:.58}
-#coeur .flux-zone[data-flux="canal"],#coeur .flux-zone[data-flux="shunt"],
-#coeur .flux-zone[data-flux="fbv"],#coeur .flux-zone[data-flux="cia"]{opacity:1}
-#coeur #flux-continu{pointer-events:none}
-#coeur #flux-continu .flux-queue{stroke-width:6;opacity:.46}
-#coeur #flux-continu .flux-corps{stroke-width:9;opacity:.8}
-#coeur #flux-continu .flux-crete{stroke-width:11}
 #coeur .flux-route{visibility:hidden;stroke:none}
-/* Trajectoires temporelles inspirées des visualisations IRM 4D flux.
-   Cyan → or code la vitesse relative du modèle, sans unité clinique ;
-   la saturation reste portée uniquement par l'aplat anatomique. */
-#coeur .flux-streamlet [data-vitesse="0"]{--flux-encre:#92e3f0}
-#coeur .flux-streamlet [data-vitesse="1"]{--flux-encre:#b9f0f1}
-#coeur .flux-streamlet [data-vitesse="2"]{--flux-encre:#e9f6e9}
-#coeur .flux-streamlet [data-vitesse="3"]{--flux-encre:#fff0ad}
-#coeur .flux-streamlet [data-vitesse="4"]{--flux-encre:#ffdb7b}
-#coeur .flux-streamlet path{fill:none;stroke:var(--flux-encre,#f8f3df);stroke-linecap:round;stroke-linejoin:round}
-#coeur .flux-grain{fill:var(--flux-encre,#f8f3df)}
-#coeur .flux-queue{stroke-width:5;opacity:.42}
-#coeur .flux-corps{stroke-width:8;opacity:.78}
-#coeur .flux-crete{stroke-width:10;opacity:1}
-#coeur .flux-tete{stroke-width:6.5;opacity:1}
+/* Filets clairs, tête en chevron et queue effilée : une seule convention
+   visuelle pour les vaisseaux, les cavités et les futurs conduits. */
+#coeur .flux-streamlet path{fill:none;stroke:#fff9e9;stroke-linecap:round;stroke-linejoin:round}
+#coeur .flux-queue{stroke-width:5;opacity:.25}
+#coeur .flux-corps{stroke-width:8;opacity:.60}
+#coeur .flux-crete{stroke-width:11;opacity:.95}
+#coeur .flux-tete{stroke-width:8;opacity:1}
 #coeur .flux-zone[data-jet="1"] .flux-crete{stroke-width:8}
 #coeur .flux-zone[data-mode="cavite-borgne"],
 #coeur .flux-zone[data-mode="oreillette-borgne"]{opacity:.35}
