@@ -205,6 +205,13 @@ main{flex:1; display:grid; grid-template-columns:280px minmax(0,1fr) 320px; min-
 #coeur #canal-conduit .flux-crete{stroke-width:8}
 #coeur #canal-conduit .flux-tete{stroke-width:6}
 #coeur .flux-zone,#coeur .flux-streamlet{pointer-events:none}
+#coeur .flux-zone{opacity:.58}
+#coeur .flux-zone[data-flux="canal"],#coeur .flux-zone[data-flux="shunt"],
+#coeur .flux-zone[data-flux="fbv"],#coeur .flux-zone[data-flux="cia"]{opacity:1}
+#coeur #flux-continu{pointer-events:none}
+#coeur #flux-continu .flux-queue{stroke-width:6;opacity:.46}
+#coeur #flux-continu .flux-corps{stroke-width:9;opacity:.8}
+#coeur #flux-continu .flux-crete{stroke-width:11}
 #coeur .flux-route{visibility:hidden;stroke:none}
 /* Trajectoires temporelles inspirées des visualisations IRM 4D flux.
    Cyan → or code la vitesse relative du modèle, sans unité clinique ;

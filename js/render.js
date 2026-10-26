@@ -487,7 +487,7 @@ function assembler(anat) {
     var cid = 'clip-' + (n++);
     clips.push('<clipPath id="' + cid + '" clipPathUnits="userSpaceOnUse">' +
                dec.corps + '</clipPath>');
-    flux.push('<g transform="' + t + dec.t + '" clip-path="url(#' + cid + ')">' +
+    flux.push('<g data-piece="' + role + '" transform="' + t + dec.t + '" clip-path="url(#' + cid + ')">' +
               contenu + '</g>');
   }
 
@@ -520,9 +520,16 @@ function assembler(anat) {
      ce qui ne coûte rien. */
   return '<defs>' + clips.join('') +
          (canalPresent ? '<clipPath id="clip-canal" clipPathUnits="userSpaceOnUse"><path id="canal-decoupe"/></clipPath>' : '') +
+         '<mask id="masque-flux-continu" maskUnits="userSpaceOnUse" x="0" y="0" width="1200" height="3000" style="mask-type:alpha">' +
+           '<use href="#fill"/>' +
+           (d.fbv !== 'ferme' ? '<rect x="545" y="' + (FBV_Y - (FBV_H[d.fbv] || 0)) + '" width="110" height="' + (2 * (FBV_H[d.fbv] || 0)) + '" fill="white"/>' : '') +
+           (d.o.cia !== 'intacte' ? '<rect x="560" y="' + (CIA_Y - (CIA_H[d.o.cia] || 0)) + '" width="80" height="' + (2 * (CIA_H[d.o.cia] || 0)) + '" fill="white"/>' : '') +
+         '</mask>' +
          '</defs>' +
          '<g id="fill" stroke="none">' + fills.join('') + '</g>' +
-         '<g id="flux" fill="none">' + flux.join('') + passages(d) + '</g>' +
+         '<g id="flux" fill="none">' + flux.join('') + passages(d) +
+           '<g id="flux-continu" mask="url(#masque-flux-continu)">' + balisesStreamlets(14) + '</g>' +
+         '</g>' +
          '<g id="ink" fill="none" stroke="currentColor" stroke-width="17" ' +
          'stroke-linecap="round" stroke-linejoin="round">' + inks.join('') + '</g>' +
          (canalPresent ?
@@ -984,6 +991,7 @@ function preparerFlux(svgRoot) {
     cache.push(item);
   }
   svgRoot._cacheFlux = cache;
+  if (typeof preparerContinu === 'function') cache.continu = preparerContinu(svgRoot, cache);
   svgRoot._fluxFige = '';
   svgRoot._fluxInitialise = false;
   svgRoot._fluxArretSignature = '';
@@ -1158,6 +1166,7 @@ function avancerCache(cache, d, etat, dt, relaxer) {
       else avancerChamp(item, part, dt);
     }
   }
+  if (cache.continu && dt > 0) avancerContinu(cache.continu, d, etat, dt);
 }
 
 function rendreCache(cache) {
@@ -1177,4 +1186,5 @@ function rendreCache(cache) {
       }
     }
   }
+  if (cache.continu) rendreContinu(cache.continu);
 }

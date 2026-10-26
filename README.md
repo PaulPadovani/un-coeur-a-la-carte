@@ -133,8 +133,9 @@ Ils ne constituent pas une validation clinique.
 - Les circulations de Glenn et de Fontan ne sont pas modélisées.
 - Le retour veineux pulmonaire anormal, l'hétérotaxie et la fuite
   auriculo-ventriculaire ne sont pas représentés.
-- Les axes de flux sont des indications visuelles et non des champs de
-  vitesse calculés.
+- Les trajectoires suivent des champs de vitesse bidimensionnels calculés
+  dans les cavités et des profils qualitatifs dans les conduits. Elles ne
+  sont ni une mesure IRM ni un calcul de vélocité clinique.
 
 ## Contribuer et citer
 
