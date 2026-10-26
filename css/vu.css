@@ -66,7 +66,7 @@ header{
 }
 #btn-flux.on:hover{background:#12304b;color:#F7F5EF}
 /* visualisation coupée : les particules disparaissent, les aplats restent */
-body.sans-flux #flux{display:none}
+body.sans-flux #flux,body.sans-flux #canal-conduit .flux-zone{display:none}
 header h1{
   font-size:19px; margin:0; font-weight:400; color:var(--marine);
   font-family:ui-serif,Georgia,"Times New Roman",serif; letter-spacing:.1px;
@@ -94,7 +94,7 @@ header p{
   color:var(--terre); letter-spacing:.5px;
 }
 
-main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
+main{flex:1; display:grid; grid-template-columns:280px minmax(0,1fr) 320px; min-height:0}
 
 /* ---------------- panneaux ---------------- */
 .panneau{
@@ -180,8 +180,8 @@ main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
    le moins de marge possible, et le bandeau du bas se replie. */
 .scene{
   position:relative; isolation:isolate;
-  display:flex; align-items:center; justify-content:center;
-  padding:4px 8px; min-height:0; overflow:hidden;
+  display:flex; flex-direction:column;
+  padding:16px 20px 12px; min-height:0; overflow:hidden;
   background:
     radial-gradient(ellipse at 50% 48%,rgba(255,255,255,.92) 0 28%,rgba(250,249,245,.72) 48%,rgba(240,238,230,.2) 72%),
     linear-gradient(rgba(24,58,90,.035) 1px,transparent 1px),
@@ -195,87 +195,84 @@ main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
 }
 #coeur{
   position:relative;z-index:1;width:100%;height:100%;color:#26241F;
-  filter:drop-shadow(0 10px 18px rgba(31,30,27,.07));
+  filter:drop-shadow(0 5px 9px rgba(31,30,27,.04));
 }
-#coeur #fill [data-comp]{transition:fill .32s linear,opacity .32s linear}
+#coeur #fill [data-comp]{transition:opacity .2s linear}
 #coeur #flux{pointer-events:none}
+#coeur #canal-conduit{pointer-events:none}
+#coeur #canal-conduit .flux-queue{stroke-width:4}
+#coeur #canal-conduit .flux-corps{stroke-width:6}
+#coeur #canal-conduit .flux-crete{stroke-width:9}
+#coeur #canal-conduit .flux-tete{stroke-width:7}
 #coeur .flux-zone,#coeur .flux-streamlet{pointer-events:none}
 #coeur .flux-route{visibility:hidden;stroke:none}
-#coeur .flux-streamlet path{
-  fill:none;stroke-linecap:round;stroke-linejoin:round;
-}
-/* Une pathline en trois tronçons qui S'ÉPAISSISSENT et s'éclaircissent vers
-   la tête. C'est ce gradient qui dit le sens du mouvement, bien avant la
-   vitesse de défilement. L'ancien découpage faisait l'inverse — une queue
-   large et floue — et donnait une bavure au lieu d'un traceur.
-   La teinte de chaque tronçon est écrite par render.js : elle porte la
-   vitesse à l'instant où la particule est passée par là. */
-/* Épaisseurs calibrées pour la PROJECTION : le cœur assemblé mesure 1200
-   unités de large et sera vu à plusieurs mètres. Un trait sous 3 unités
-   disparaît. */
-#coeur .flux-queue{stroke-width:3.6;opacity:.34}
-#coeur .flux-corps{stroke-width:6.2;opacity:.72}
-#coeur .flux-crete{stroke-width:8.4;opacity:1}
-#coeur .flux-tete{opacity:1}
-/* Dans une cavité la lumière est large : on peut se permettre un trait
-   franchement plus généreux sans transformer la chambre en pelote. */
-#coeur .flux-zone:not([data-mode="route"]) .flux-queue{stroke-width:4.4}
-#coeur .flux-zone:not([data-mode="route"]) .flux-corps{stroke-width:7.2}
-#coeur .flux-zone:not([data-mode="route"]) .flux-crete{stroke-width:9.6}
-/* Un jet reste plus fin que le reste — c'est sa vitesse et sa couleur qui
-   le signalent, pas son épaisseur. */
-#coeur .flux-zone[data-jet="1"] .flux-queue{stroke-width:2.8;opacity:.30}
-#coeur .flux-zone[data-jet="1"] .flux-corps{stroke-width:4.8;opacity:.78}
-#coeur .flux-zone[data-jet="1"] .flux-crete{stroke-width:7}
-/* Recirculation résiduelle : présente, jamais bavarde. */
-#coeur .flux-zone[data-mode="cavite-borgne"] .flux-queue,
-#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-queue{opacity:.12}
-#coeur .flux-zone[data-mode="cavite-borgne"] .flux-corps,
-#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-corps{opacity:.34}
-#coeur .flux-zone[data-mode="cavite-borgne"] .flux-crete,
-#coeur .flux-zone[data-mode="oreillette-borgne"] .flux-crete{opacity:.62}
+/* Filets clairs, tête en chevron et queue effilée : une seule convention
+   visuelle pour les vaisseaux, les cavités et les futurs conduits. */
+#coeur .flux-streamlet path{fill:none;stroke:#fff9e9;stroke-linecap:round;stroke-linejoin:round}
+#coeur .flux-queue{stroke-width:5;opacity:.25}
+#coeur .flux-corps{stroke-width:8;opacity:.60}
+#coeur .flux-crete{stroke-width:11;opacity:.95}
+#coeur .flux-tete{stroke-width:8;opacity:1}
+#coeur .flux-zone[data-jet="1"] .flux-crete{stroke-width:8}
+#coeur .flux-zone[data-mode="cavite-borgne"],
+#coeur .flux-zone[data-mode="oreillette-borgne"]{opacity:.35}
 
-/* ---------------- moniteur ---------------- */
-#ecg{
-  width:100%; height:104px; background:#12222E;
-  border:1px solid var(--bord-fort); border-radius:7px;
-}
+/* ---------------- lecture du moniteur ---------------- */
+.saturation{padding:13px 15px 12px;background:#eef1f4;border:1px solid #cbd4dc;border-radius:10px}
+.mesure-entete{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 14px/1.4 ui-sans-serif,-apple-system,Helvetica,sans-serif;color:var(--marine)}
+.saturation .mesure-entete span:last-child{font-size:12px;font-weight:400}
+.saturation-valeur{display:flex;align-items:baseline;gap:7px;margin:2px 0 12px;color:var(--marine);font-family:ui-sans-serif,-apple-system,Helvetica,sans-serif}
+.saturation-valeur strong{font-size:clamp(52px,4.8vw,68px);letter-spacing:-3px;line-height:1.06;font-variant-numeric:tabular-nums}
+.saturation-valeur>span{font-size:24px;font-weight:500}
+.echelle-sat{position:relative;height:7px;margin-top:4px;background:#cbd4dc;border-radius:3px}
+.echelle-sat>span{position:absolute;top:-3px;height:13px;background:#526f82;border:1px solid #314e61;border-radius:2px}
+.echelle-sat i{position:absolute;top:-6px;width:3px;height:19px;background:var(--marine);box-shadow:0 0 0 2px #fff;transform:translateX(-50%)}
+.echelle-sat [hidden]{display:none}
+.echelle-bornes{display:flex;justify-content:space-between;color:#566372;font:10px/1.5 ui-sans-serif,-apple-system,Helvetica,sans-serif;margin-top:5px}
+.repere{margin:6px 0 0;font:12px/1.45 ui-sans-serif,-apple-system,Helvetica,sans-serif;color:var(--doux)}
+.saturation .repere{color:#445566}
+.sans-circulation .echelle-sat{opacity:.4}
+.mesure-debits{padding:13px 1px 11px;border-bottom:1px solid var(--bord)}
+.mesure-debits strong{font-size:30px;line-height:1;font-variant-numeric:tabular-nums;color:var(--texte)}
+.balance-debits{display:flex;position:relative;height:8px;margin:13px 0 6px;background:var(--creux);border-radius:4px}
+.balance-debits span{height:100%;transition:width .2s linear}
+#part-qp{background:var(--marine-clair);border-radius:4px 0 0 4px}
+#part-qs{background:var(--terre);border-radius:0 4px 4px 0}
+.balance-debits i{position:absolute;left:50%;top:-3px;width:2px;height:14px;background:var(--panneau);border:1px solid var(--texte)}
+.debits-legende{display:flex;justify-content:space-between;font:12px/1.5 ui-sans-serif,-apple-system,Helvetica,sans-serif;color:var(--marine)}
+.debits-legende span:last-child{color:#994322}
+.debits-legende b{font-variant-numeric:tabular-nums;margin-left:6px}
+.mesures-secondaires{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 1px 12px}
+.mesures-secondaires>div{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;align-items:baseline}
+.mesures-secondaires .lbl{font-size:13px;color:var(--doux)}
+.mesures-secondaires strong{text-align:right;font:600 21px/1.4 ui-sans-serif,-apple-system,Helvetica,sans-serif;font-variant-numeric:tabular-nums}
+.mesures-secondaires small{grid-column:1/-1;font:11px/1.4 ui-sans-serif,-apple-system,Helvetica,sans-serif;color:var(--doux)}
+.reperes-details{font:12px/1.5 ui-sans-serif,-apple-system,Helvetica,sans-serif;border-top:1px solid var(--bord);margin-top:13px}
+.reperes-details summary{cursor:pointer;min-height:36px;display:list-item;align-content:center;color:var(--marine);font-weight:600;padding:8px 0}
+.reperes-details p{margin:8px 0}
+.reperes-details dl{margin:10px 0}
+.reperes-details dt{font-weight:600;color:var(--marine);margin-top:8px}
+.reperes-details dd{margin:2px 0 8px}
+.reperes-details a{color:var(--marine);text-underline-offset:3px}
+.scope-compact{display:grid;grid-template-columns:72px 1fr;align-items:center;border:1px solid var(--bord);border-radius:7px;background:#e9ede8;overflow:hidden;color:#305c42;margin-top:12px}
+.scope-compact>div{padding:7px 9px;display:grid;grid-template-columns:1fr auto;align-items:baseline;font:11px/1 ui-sans-serif,-apple-system,Helvetica,sans-serif}
+.scope-compact strong{grid-column:1;font-size:22px;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.scope-compact small{font-size:10px}
+#ecg{width:100%;height:48px;min-width:0;display:block}
 
-.vitaux{margin-top:12px}
-.vitaux div{
-  display:flex;justify-content:space-between;align-items:baseline;
-  padding:6px 0;border-bottom:1px solid var(--bord);
-}
-.vitaux .lbl{color:var(--doux);font-size:12.5px}
-.vitaux .val{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+/* Le canal et la réserve restent lisibles sans doubler le schéma central. */
+.etat-secondaire{padding:11px 1px 0;font:12px/1.35 ui-sans-serif,-apple-system,Helvetica,sans-serif}
+.canal-ligne{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:1px 8px}
+.canal-ligne>span,.reserve-ligne>span{color:var(--doux)}
+.canal-ligne strong,.reserve-ligne strong{font-size:14px;color:var(--marine);font-variant-numeric:tabular-nums}
+.canal-ligne small{grid-column:1/-1;color:var(--doux);font-size:11px}
+.reserve-ligne{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:9px}
 
-/* ---------------- canal artériel ----------------
-   Un pourcentage ne dit rien. On montre la lumière du canal se refermer :
-   les deux ostiums sont réellement ouverts dans la paroi des vaisseaux,
-   et quand le canal est fermé il ne reste qu'un cordon — le ligament. */
-.canal{margin-top:12px;padding-top:8px;border-top:1px solid var(--bord)}
-.canal-tete{display:flex;justify-content:space-between;align-items:baseline}
-.canal-tete .lbl{color:var(--doux);font-size:12.5px}
-.canal-tete .val{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
-#canal-svg{
-  width:100%; height:74px; display:block; margin-top:2px; color:#26241F;
-}
-.canal-etat{
-  margin:0; font-size:11.5px; color:var(--doux); text-align:center;
-  font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
-}
-
-.jauge{
-  height:8px;background:var(--creux);border-radius:4px;
-  overflow:hidden;margin-top:14px
-}
+.jauge{height:6px;background:var(--creux);border-radius:4px;overflow:hidden;margin-top:5px}
 .jauge-in{height:100%;transition:width .25s linear,background .25s}
 .jauge-in.ok{background:var(--ok)}
 .jauge-in.alerte{background:var(--alerte)}
 .jauge-in.critique{background:var(--critique)}
-.jauge-lbl{margin:6px 0 0;font-size:11.5px;color:var(--doux);
-  font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
-
 /* ---------------- verdict ---------------- */
 .verdict{
   margin-top:14px; padding:11px 13px; border-radius:8px; font-size:13px;
@@ -300,7 +297,7 @@ main{flex:1; display:grid; grid-template-columns:294px 1fr 316px; min-height:0}
 /* ---------------- bandeau de transition ----------------
    Il se replie : en congrès on veut parfois toute la hauteur pour le cœur. */
 .transition{
-  flex:0 0 152px; display:flex; flex-direction:column;
+  flex:0 0 152px; min-height:0; overflow:hidden; display:flex; flex-direction:column;
   background:var(--panneau); border-top:1px solid var(--bord);
   padding:5px 18px 4px; transition:flex-basis .18s;
 }
@@ -366,6 +363,46 @@ body.en-pause .chrono{color:var(--doux)}
 }
 @media (max-height:800px){
   .transition{flex-basis:132px}
-  #ecg{height:88px}
-  #canal-svg{height:62px}
+  #ecg{height:42px}
 }
+
+/* Le cœur occupe la scène ; la seule commande flotte dans un angle. */
+.scene::after{display:none}
+.outil-scene{position:absolute;top:12px;right:13px;z-index:3;background:var(--panneau);border:1px solid var(--bord-fort);border-radius:6px;color:var(--marine);padding:7px 10px;min-height:34px;font-size:11px;cursor:pointer;white-space:nowrap}
+.outil-scene[aria-pressed="true"]{background:var(--marine);color:#fff}
+.scene-corps{position:relative;flex:1;min-height:0;width:100%;margin:0}
+body.sans-flux #btn-mouvement{visibility:hidden}
+button:focus-visible,summary:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--marine-clair);outline-offset:3px}
+.panneau.moniteur{scrollbar-width:thin}
+@media(min-width:1440px){main{grid-template-columns:300px minmax(0,1fr) 348px}}
+@media(max-width:1220px){main{grid-template-columns:255px minmax(0,1fr) 298px}.scene{padding:12px}}
+@media(max-height:800px) and (min-width:851px){
+  .panneau{padding:10px 14px}.saturation{padding:10px 13px}.saturation-valeur strong{font-size:54px}
+  .saturation-valeur{margin:0 0 10px}.mesure-debits{padding:10px 0}.mesures-secondaires{padding:9px 0}
+  .scene{padding-top:10px}.transition{flex-basis:130px}
+}
+/* Sur petit écran, une seule page défilante : les contrôles restent accessibles. */
+@media(max-width:850px){
+  html,body{height:auto;min-height:100%}body{overflow:auto}header{flex-wrap:wrap;padding:10px 14px;gap:10px}
+  header h1{font-size:18px}header p{display:none}.langue{margin-left:auto}
+  main{display:grid;grid-template-columns:minmax(0,1fr);flex:none}
+  .scene{grid-row:1;min-height:600px;height:74vh;max-height:820px;padding:16px}
+  .moniteur{grid-row:2}.panneau{overflow:visible;border:0;padding:20px}.panneau.moniteur{border-left:0;border-top:1px solid var(--bord)}
+  #construction{border-top:1px solid var(--bord)}
+  .saturation-valeur strong{font-size:68px}.slot select{font-size:16px;min-height:44px}.geste{min-height:44px;font-size:15px}
+  .slot span,.note,.vitesse{font-size:14px}.panneau h2{font-size:12px}.reperes-details{font-size:14px}
+  button,.outil-scene,#btn-normal,#btn-graphe,.pilule{min-height:44px}.langue a,.langue span{min-width:35px;padding:10px}
+  .transition{flex:none;min-height:210px;padding:12px}.transition-tete{gap:9px}.transition h2{font-size:11px}.legende{gap:10px}.lecture{font-size:11px}
+  #transition{flex:none;height:145px}body.graphe-replie .transition{min-height:70px}.scene::after{display:none}
+}
+@media(max-width:410px){
+  .outil-scene{font-size:10px;padding:6px}.scene{padding:12px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+
+/* Le verdict se lit après les mesures ; son mécanisme se déplie. */
+.verdict{margin:3px 0 0;padding:7px 10px;box-shadow:none;font-size:12px}
+.verdict summary{font:600 13px/1.4 ui-sans-serif,-apple-system,Helvetica,sans-serif;color:var(--marine);cursor:pointer}
+.verdict[open] span{margin-top:7px}
+.verdict.letal summary,.verdict.impossible summary{color:var(--critique)}
+@media(max-width:850px){.verdict summary{min-height:32px;align-content:center;font-size:14px}}

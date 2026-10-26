@@ -1,27 +1,14 @@
-/* render.js — assemble les cartes SVG, colore les compartiments et anime les
-   flux.
+/* render.js — cartes anatomiques, montages et flux pédagogiques.
 
-   LES FLUX. Un aplat de couleur dit la saturation mais ne dit rien du débit,
-   or c'est le débit — et surtout son partage — qui est le sujet du
-   simulateur. Chaque compartiment reçoit donc des PATHLINES : la trajectoire
-   récente d'une particule de sang, amincie et assombrie vers sa queue,
-   colorée par la vitesse le long de son propre trajet.
+   L'aplat bleu–mauve–rouge porte l'oxygénation. Des filets ivoire effilés
+   portent le déplacement et une tête en chevron en indique le sens, même
+   en pause. La densité reste volontairement faible pour la projection.
 
-   Deux régimes, deux traitements honnêtes.
-   — Les VAISSEAUX sont des conduits. Ligne centrale, profil de vitesse
-     transverse, adhérence à la paroi : le sang court au centre et colle au
-     bord, les filets se cisaillent au lieu de défiler en rails parallèles.
-   — Les CAVITÉS ne suivent aucune ligne. Leur champ de vitesse est résolu
-     par champ.js — advection, viscosité, projection de pression sur le
-     masque anatomique. Le jet d'admission, le tourbillon de remplissage et
-     les zones de stase émergent de la forme du ventricule ; ils ne sont
-     plus écrits à la main.
-
-   Le défilement n'est PAS lié à la fréquence du scope : ce n'est pas une
-   pulsatilité, c'est un débit moyen. Les confondre serait une faute de sens.
-
-   Tout est découpé (`clip-path`) sur la lumière anatomique pour ne jamais
-   transformer le schéma en carte routière.                                */
+   Les conduits suivent leur axe et un profil transverse. Les cavités
+   conservent le champ de champ.js et leurs ports anatomiques ; tous les
+   filets sont découpés sur la lumière. Le rendu est qualitatif : aucune
+   vitesse clinique ne se déduit de l'animation. Les débits moyens ne sont
+   pas synchronisés à l'ECG. */
 
 var GRILLE = { carte: [600, 1000], double: [1200, 1000] };
 
@@ -92,7 +79,107 @@ var SUBCL  = 'M448,352 C476,326 505,300 516,198';
 /* Centre exact de la prothèse générée : sous-clavière droite → face
    inférieure de la bifurcation pulmonaire. L'ancien axe finissait à
    (512,362), très loin de l'anastomose réelle (396,258). */
-var BTT = 'M860.6,298.8 Q638.1,166.7 395.9,257.7';
+/* Les montages sont des couches déclarées séparément des cartes natives.
+   Les raccords sont exprimés dans le repère de l'assemblage. Un montage
+   futur doit aussi déclarer ses connexions dans anatomie.js : le dessin
+   seul ne crée jamais une nouvelle voie hémodynamique. */
+var MONTAGES_SCHEMA = {
+  btt: {
+    carte: 'G1-BTT', role: 'btt', y: 0, miroirDiscordance: true,
+    origine: { port: 'sous-claviere', x: 860.6, y: 298.8 },
+    destination: { port: 'bifurcation-pulmonaire', x: 395.9, y: 257.7 },
+    courbure: { x: 638.1, y: 166.7 }
+  },
+  rashkind: { carte: 'G3-Rashkind', role: 'geste', y: 2000 }
+};
+function trajetMontage(m) {
+  return 'M' + m.origine.x + ',' + m.origine.y + ' Q' +
+    m.courbure.x + ',' + m.courbure.y + ' ' +
+    m.destination.x + ',' + m.destination.y;
+}
+var BTT = trajetMontage(MONTAGES_SCHEMA.btt);
+
+/* Canal artériel : même langage de conduit que le BTT, mais raccords
+   anatomiques propres (crosse aortique ↔ branche pulmonaire). Il demeure
+   visible sur le cœur pendant toute la transition. La lumière suit la
+   perméabilité du modèle ; à fermeture complète, seul le ligament reste. */
+var CANAL_SCHEMA = {
+  aorteNormale: { x: 690, y: 450 },
+  aorteEtroite: { x: 725, y: 450 },
+  pulmonaire: { x: 485, y: 340 },
+  controle1: { dx: -20, y: 399 },
+  controle2: { x: 558, y: 309 }
+};
+
+function pointsCanal(aorteEtroite) {
+  var depart = aorteEtroite ? CANAL_SCHEMA.aorteEtroite : CANAL_SCHEMA.aorteNormale;
+  var a = depart, b = { x: depart.x + CANAL_SCHEMA.controle1.dx, y: CANAL_SCHEMA.controle1.y },
+      c = CANAL_SCHEMA.controle2, d = CANAL_SCHEMA.pulmonaire;
+  var points = [];
+  for (var i = 0; i <= 24; i++) {
+    var t = i / 24, u = 1 - t;
+    var x = u*u*u*a.x + 3*u*u*t*b.x + 3*u*t*t*c.x + t*t*t*d.x;
+    var y = u*u*u*a.y + 3*u*u*t*b.y + 3*u*t*t*c.y + t*t*t*d.y;
+    var dx = 3*u*u*(b.x-a.x) + 6*u*t*(c.x-b.x) + 3*t*t*(d.x-c.x);
+    var dy = 3*u*u*(b.y-a.y) + 6*u*t*(c.y-b.y) + 3*t*t*(d.y-c.y);
+    var longueur = Math.hypot(dx, dy);
+    points.push({ x: x, y: y, nx: -dy/longueur, ny: dx/longueur, t: t });
+  }
+  return points;
+}
+
+function formeCanal(p, aorteEtroite) {
+  var points = pointsCanal(aorteEtroite), haut = [], bas = [], axe = [];
+  var rayon = 3 + 29 * Math.max(0, Math.min(1, p));
+  function coord(x, y) { return x.toFixed(1) + ',' + y.toFixed(1); }
+  points.forEach(function (v) {
+    var entree = aorteEtroite ? 0.58 : 1;
+    var profil = v.t < 0.3 ? entree + (1 - entree) * v.t / 0.3 :
+                 v.t > 0.78 ? 1 - 0.22 * (v.t - 0.78) / 0.22 : 1;
+    var r = rayon * profil;
+    haut.push(coord(v.x + v.nx*r, v.y + v.ny*r));
+    bas.push(coord(v.x - v.nx*r, v.y - v.ny*r));
+    axe.push(coord(v.x, v.y));
+  });
+  return {
+    lumiere: 'M' + haut.join(' L') + ' L' + bas.slice().reverse().join(' L') + ' Z',
+    bord1: 'M' + haut.join(' L'), bord2: 'M' + bas.join(' L'),
+    ligament: 'M' + axe.join(' L')
+  };
+}
+
+function axeCanal(aorteEtroite) {
+  return 'M' + pointsCanal(aorteEtroite).map(function (v) {
+    return v.x.toFixed(1) + ',' + v.y.toFixed(1);
+  }).join(' L');
+}
+
+function mettreAJourCanal(svgRoot, d, p, etat) {
+  var groupe = svgRoot.querySelector('#canal-conduit');
+  if (!groupe) return;
+  p = Math.max(0, Math.min(1, p));
+  var ouvert = p > 0.02;
+  var aorteEtroite = d.ao.calibre !== 'normale';
+  var calibre = Math.round(p * 200);
+  var lumiere = groupe.querySelector('#canal-lumiere');
+  var bord1 = groupe.querySelector('#canal-bord-1');
+  var bord2 = groupe.querySelector('#canal-bord-2');
+  var ligament = groupe.querySelector('#canal-ligament');
+  if (groupe._calibre !== calibre || groupe._aorteEtroite !== aorteEtroite) {
+    var forme = formeCanal(calibre / 200, aorteEtroite);
+    lumiere.setAttribute('d', forme.lumiere);
+    bord1.setAttribute('d', forme.bord1);
+    bord2.setAttribute('d', forme.bord2);
+    ligament.setAttribute('d', forme.ligament);
+    svgRoot.querySelector('#canal-decoupe').setAttribute('d', forme.lumiere);
+    groupe._calibre = calibre;
+    groupe._aorteEtroite = aorteEtroite;
+  }
+  lumiere.style.display = bord1.style.display = bord2.style.display = ouvert ? '' : 'none';
+  ligament.style.display = ouvert ? 'none' : '';
+  var versPoumon = !etat.fluxVisuel || etat.fluxVisuel.sensCanal >= 0;
+  lumiere.setAttribute('fill', satColor(versPoumon ? etat.SaO2 : etat.SapO2));
+}
 
 /* [compartiment, tracé, nombre de filets, écartement, orientation,
     facteur de vitesse locale, jet]
@@ -148,7 +235,7 @@ ROUTES_FLUX['P3'] = [ROUTES_FLUX['P1'][1], ROUTES_FLUX['P1'][2]];
 /* Quel debit traverse quel compartiment.
    p = suit Qp, s = suit Qs, c = traverse la chambre, x = le shunt. */
 var DEBIT = { od: 's', og: 'p', vd: 'c', vg: 'c', cb: 'c',
-              aorte: 's', 'ap-tronc': 'p', 'ap-branches': 'p', shunt: 'x',
+              aorte: 's', 'ap-tronc': 'p', 'ap-branches': 'p', shunt: 'x', canal: 'k',
               cia: 'a', fbv: 'f', tsa: 't' };
 
 var _zoneFlux = 0;
@@ -166,7 +253,7 @@ var _zoneFlux = 0;
    développement : le coût dominant n'est pas le calcul mais le tracé de
    quelques centaines de chemins SVG, et il dépend beaucoup du navigateur.
 ------------------------------------------------------------------ */
-var FLUX_DENSITE = 1;
+var FLUX_DENSITE = 0.28;
 function dose(n) { return Math.max(4, Math.round(n * FLUX_DENSITE)); }
 
 /* Un traceur = une pathline. Elle s'AMINCIT vers sa queue : c'est ce
@@ -180,7 +267,7 @@ function balisesStreamlets(n) {
            '<path class="flux-queue"/>' +
            '<path class="flux-corps"/>' +
            '<path class="flux-crete"/>' +
-           '<circle class="flux-tete" r="5.2"/>' +
+           '<path class="flux-tete" d="M-19,-12 L0,0 L-19,12"/>' +
            '</g>');
   }
   return o.join('');
@@ -328,6 +415,7 @@ function debitDe(cle, etat, d) {
   if (cle === 't') return Qs * 0.11;
   if (cle === 'x') return etat.fluxVisuel ? etat.fluxVisuel.shunt
                                          : Math.abs(Qp - Qs);
+  if (cle === 'k') return etat.fluxVisuel ? etat.fluxVisuel.canal : 0;
   if (cle === 'a') {                       /* communication interauriculaire */
     if (!d) return Math.abs(Qp - Qs);
     if (d.o.av === 'droit') return Qs;     /* tout le retour cave doit passer */
@@ -413,19 +501,36 @@ function assembler(anat) {
   pose(d.o.id, 0, 2000, false, 'oreillettes');
 
   /* gestes superposables */
-  if (d.gestes.btt && d.ap.id && d.ao.id)
-    pose('G1-BTT', 0, 0, d.discordance ? 1200 : 0, 'btt');
-  if (d.gestes.rashkind) pose('G3-Rashkind', 0, 2000, false, 'geste');
+  Object.keys(MONTAGES_SCHEMA).forEach(function (cle) {
+    if (!d.gestes[cle]) return;
+    if (cle === 'btt' && !(d.ap.id && d.ao.id)) return;
+    var m = MONTAGES_SCHEMA[cle];
+    pose(m.carte, 0, m.y, m.miroirDiscordance && d.discordance ? 1200 : 0, m.role);
+  });
+
+  var canalPresent = !!(d.ap.id && d.ao.id);
+  var fluxCanal = canalPresent ? routeFlux(['canal',
+    axeCanal(d.ao.calibre !== 'normale'), 1, 40, 'h', 2.6, true]) : '';
 
   /* Plus de filtre de flou : un `feGaussianBlur` appliqué à quelques
      dizaines d'éléments coûtait plusieurs millisecondes par image en
      projection. La lueur est désormais obtenue par empilement de traits,
      ce qui ne coûte rien. */
-  return '<defs>' + clips.join('') + '</defs>' +
+  return '<defs>' + clips.join('') +
+         (canalPresent ? '<clipPath id="clip-canal" clipPathUnits="userSpaceOnUse"><path id="canal-decoupe"/></clipPath>' : '') +
+         '</defs>' +
          '<g id="fill" stroke="none">' + fills.join('') + '</g>' +
          '<g id="flux" fill="none">' + flux.join('') + passages(d) + '</g>' +
          '<g id="ink" fill="none" stroke="currentColor" stroke-width="17" ' +
-         'stroke-linecap="round" stroke-linejoin="round">' + inks.join('') + '</g>';
+         'stroke-linecap="round" stroke-linejoin="round">' + inks.join('') + '</g>' +
+         (canalPresent ?
+           '<g id="canal-conduit"' + (d.discordance ? ' transform="translate(1200,0) scale(-1,1)"' : '') + '>' +
+             '<path id="canal-lumiere" stroke="none"/>' +
+             '<g clip-path="url(#clip-canal)">' + fluxCanal + '</g>' +
+             '<g fill="none" stroke="currentColor" stroke-width="10" stroke-linejoin="round">' +
+               '<path id="canal-bord-1"/><path id="canal-bord-2"/>' +
+             '</g><path id="canal-ligament" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>' +
+           '</g>' : '');
 }
 
 /* ------------------------------------------------------------------
@@ -434,16 +539,21 @@ function assembler(anat) {
 function teintes(anat, etat) {
   var d = anat.describe();
   var sm = etat.SaO2;
+  /* Si la CIV déverse le sang droit vers le VG, le sang éjecté par ce VG
+     porte la même saturation mélangée que l'aorte. */
+  var vgMelange = etat.fluxVisuel && etat.fluxVisuel.sensCIV === 1;
   return {
     'od': etat.SvO2,
     'og': CFG.SpvO2,
     'vd': etat.melange ? sm : etat.SvO2,
-    'vg': etat.melange ? sm : CFG.SpvO2,
+    'vg': etat.melange || vgMelange ? sm : CFG.SpvO2,
     'cb': etat.melange ? sm : etat.SvO2,
     'aorte': sm,
     /* Les vaisseaux du cou portent le sang de la crosse, y compris quand
        celle-ci est perfusée à contre-courant par le canal. */
     'tsa': sm,
+    'canal': etat.fluxVisuel && etat.fluxVisuel.sensCanal < 0
+             ? etat.SapO2 : sm,
     'shunt': (etat.fluxVisuel && etat.fluxVisuel.sensShunt < 0)
              ? etat.SapO2 : sm,
     /* En transposition l'artere pulmonaire est PLUS saturee que l'aorte :
@@ -460,64 +570,8 @@ function pseudo(seed) {
 }
 function limite(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
-/* ------------------------------------------------------------------
-   ÉCHELLE DE VITESSE.
-
-   Deux informations doivent cohabiter sans se confondre : l'aplat dit
-   l'OXYGÉNATION, les traceurs disent la VITESSE. C'est pourquoi la rampe
-   de vitesse évite soigneusement le bleu-pourpre-rouge des saturations et
-   court du bleu ardoise à l'orange en passant par le cyan, la menthe et
-   l'ambre. Elle est continue, et non plus découpée en cinq paliers dont
-   quatre étaient inatteignables : avec CO_MAX = 3,6 la quasi-totalité des
-   configurations tombait dans la même bande turquoise, si bien que le
-   canal « vitesse » ne disait plus rien.
-
-   La couleur varie aussi LE LONG de la pathline : la queue porte la
-   vitesse d'il y a quelques dixièmes de seconde, la crête la vitesse
-   actuelle. Un traceur qui franchit un cerclage vire donc du cyan à
-   l'orange sur sa propre longueur, comme sur un rendu de vélocimétrie.
------------------------------------------------------------------- */
-var FLUX_STOPS = [[0.00, [0x33, 0x62, 0x8E]],   /* bleu ardoise : quasi stase */
-                  [0.26, [0x3E, 0xA6, 0xCE]],   /* cyan                        */
-                  [0.50, [0x55, 0xD6, 0xBC]],   /* menthe                      */
-                  [0.72, [0xE3, 0xC7, 0x58]],   /* ambre                       */
-                  [0.88, [0xF7, 0x9A, 0x45]],   /* orange                      */
-                  [1.00, [0xFF, 0x71, 0x33]]];  /* jet                         */
-var FLUX_NIVEAUX = 40;
-var FLUX_VMAX = 620;          /* unités SVG par seconde en butée de rampe */
-
-var FLUX_PALETTE = (function () {
-  var o = [];
-  for (var k = 0; k < FLUX_NIVEAUX; k++) {
-    var t = k / (FLUX_NIVEAUX - 1), c = FLUX_STOPS[FLUX_STOPS.length - 1][1];
-    for (var i = 0; i < FLUX_STOPS.length - 1; i++) {
-      var a = FLUX_STOPS[i], b = FLUX_STOPS[i + 1];
-      if (t <= b[0]) {
-        var f = (t - a[0]) / (b[0] - a[0]);
-        c = [Math.round(a[1][0] + f * (b[1][0] - a[1][0])),
-             Math.round(a[1][1] + f * (b[1][1] - a[1][1])),
-             Math.round(a[1][2] + f * (b[1][2] - a[1][2]))];
-        break;
-      }
-    }
-    o.push('rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')');
-  }
-  return o;
-})();
-
-/* Exposant 0,38 plutôt qu'une racine carrée. Les vitesses en cavité (60 à
-   280 unités/s) et en conduit (100 à 700) ne vivent pas dans la même
-   décade : avec une échelle trop plate, toutes les chambres tombaient dans
-   le bas sombre de la rampe et devenaient illisibles sur l'aplat. Cette
-   compression relève le bas de gamme sans écraser le haut, et réserve le
-   bleu profond à ce qui est vraiment en stase. */
-function niveauVitesse(v) {
-  return Math.round(Math.pow(limite(v / FLUX_VMAX, 0, 1), 0.38) *
-                    (FLUX_NIVEAUX - 1));
-}
-
-/* Écrire un attribut coûte ; le comparer ne coûte rien. Les teintes ne
-   changent que lorsque le niveau quantifié change vraiment. */
+/* Écrire un attribut coûte ; le comparer ne coûte rien. Les tracés
+   vides ne sont réécrits que si nécessaire. */
 function poserTrait(el, cle, val) {
   if (el._v === val) return;
   el._v = val;
@@ -535,8 +589,8 @@ function poserTrait(el, cle, val) {
    plus longue, ce qui est un bon indice de vélocimétrie — mais avec un
    plancher qui garantit un filet visible même en bas débit.
 ------------------------------------------------------------------ */
-var TRACE_MAX = 30;
-function pasTrace(v) { return limite(v * 0.42, 122, 300) / TRACE_MAX; }
+var TRACE_MAX = 36;
+function pasTrace(v) { return limite(v * 0.48, 180, 340) / TRACE_MAX; }
 
 /* ------------------------------------------------------------------
    PULSATILITÉ.
@@ -622,8 +676,15 @@ function ondePulse(table) {
 function chemin(pts, a, b) {
   if (b - a < 2) return '';
   var d = 'M' + pts[a].x.toFixed(1) + ',' + pts[a].y.toFixed(1);
-  for (var i = a + 1; i < b; i++)
-    d += ' L' + pts[i].x.toFixed(1) + ',' + pts[i].y.toFixed(1);
+  /* Courbe passant par des milieux successifs : les trajectoires du champ
+     restent continues sans dessiner chaque angle de la grille numérique. */
+  for (var i = a + 1; i < b - 1; i++) {
+    var x = (pts[i].x + pts[i + 1].x) / 2;
+    var y = (pts[i].y + pts[i + 1].y) / 2;
+    d += ' Q' + pts[i].x.toFixed(1) + ',' + pts[i].y.toFixed(1) +
+         ' ' + x.toFixed(1) + ',' + y.toFixed(1);
+  }
+  d += ' L' + pts[b - 1].x.toFixed(1) + ',' + pts[b - 1].y.toFixed(1);
   return d;
 }
 
@@ -647,6 +708,7 @@ function rendreStreamlet(p) {
   if (n < 3) {
     poserTrait(p.queue, 'd', ''); poserTrait(p.corps, 'd', '');
     poserTrait(p.crete, 'd', '');
+    p.tete.setAttribute('visibility', 'hidden');
     return;
   }
   var i1 = Math.floor(n * 0.42), i2 = Math.floor(n * 0.76);
@@ -654,13 +716,14 @@ function rendreStreamlet(p) {
   p.corps.setAttribute('d', chemin(p.trace, i1, i2 + 1));
   p.crete.setAttribute('d', chemin(p.trace, i2, n));
   var h = p.trace[n - 1];
-  p.tete.setAttribute('cx', h.x.toFixed(1));
-  p.tete.setAttribute('cy', h.y.toFixed(1));
-  poserTrait(p.queue, 'stroke', FLUX_PALETTE[niveauVitesse(p.vit[0])]);
-  poserTrait(p.corps, 'stroke', FLUX_PALETTE[niveauVitesse(p.vit[i1])]);
-  var teinte = FLUX_PALETTE[niveauVitesse(p.vit[n - 1])];
-  poserTrait(p.crete, 'stroke', teinte);
-  poserTrait(p.tete, 'fill', teinte);
+  var avant = p.trace[Math.max(0, n - 4)];
+  var angle = Math.atan2(h.y - avant.y, h.x - avant.x) * 180 / Math.PI;
+  /* Pas de chevron isolé lors du réensemencement d'une trajectoire. */
+  p.tete.setAttribute('visibility', n < 9 ? 'hidden' : 'visible');
+  p.tete.setAttribute('transform', 'translate(' + h.x.toFixed(1) + ',' +
+    h.y.toFixed(1) + ') rotate(' + angle.toFixed(1) + ')');
+  /* Une seule encre claire : la saturation appartient à l'aplat, le débit
+     au déplacement. La flèche rend le sens lisible sans animation. */
 }
 
 /* ------------------------------------------------------------------
@@ -824,7 +887,7 @@ function pointBrutDansClip(item, svgRoot, x, y) {
 
 function preparerFlux(svgRoot) {
   if (!svgRoot) return [];
-  var zones = svgRoot.querySelectorAll('#flux .flux-zone');
+  var zones = svgRoot.querySelectorAll('#flux .flux-zone, #canal-conduit .flux-zone');
   var cache = [];
   for (var i = 0; i < zones.length; i++) {
     var z = zones[i], mode = z.getAttribute('data-mode');
@@ -891,6 +954,8 @@ function preparerFlux(svgRoot) {
   }
   svgRoot._cacheFlux = cache;
   svgRoot._fluxFige = '';
+  svgRoot._fluxInitialise = false;
+  svgRoot._fluxArretSignature = '';
   return cache;
 }
 
@@ -913,9 +978,20 @@ function colorier(svgRoot, anat, etat) {
     noeuds[i].setAttribute('opacity', '0.9');
   }
 
+  mettreAJourCanal(svgRoot, d, anat.canal, etat);
+
   var cache = svgRoot._cacheFlux || preparerFlux(svgRoot);
   for (var j = 0; j < cache.length; j++) {
     var item = cache[j], vv = c[item.comp], q;
+    if (item.comp === 'canal') {
+      /* Les filets se recentrent dans la lumière qui rétrécit. Le clip
+         anatomique évite qu'une trace antérieure dépasse de la paroi. */
+      item.rayon = Math.max(1, (3 + 29 * Math.max(0, Math.min(1, d.canal))) * 0.52);
+      item.node.style.opacity = (0.35 + 0.65 * Math.max(0, Math.min(1, d.canal))).toFixed(2);
+      item.particules.forEach(function (part) {
+        part.decalage = limite(part.decalage || 0, -item.rayon * 0.94, item.rayon * 0.94);
+      });
+    }
     if (item.debit === 'r') {
       if (item.mode === 'cavite-isolee') q = 0;
       else if (item.mode === 'cavite-borgne')
@@ -924,16 +1000,17 @@ function colorier(svgRoot, anat, etat) {
     } else q = debitDe(item.debit, etat, d);
     item.q = (vv === null || vv === undefined) ? 0 : q;
 
-    var seuil = item.comp === 'shunt' ? 0.008 : item.debit === 'r' ? 0.015 : 0.035;
+    var seuil = (item.comp === 'shunt' || item.comp === 'canal') ? 0.008 :
+                item.debit === 'r' ? 0.015 : 0.035;
     /* Le nombre de traceurs actifs suit √Q : il faut qu'un lit hyperperfusé
        se voie plus peuplé qu'un lit hypoperfusé, sans que le rapport soit
        linéaire — sinon un Qp/Qs de 4 viderait complètement le versant
        systémique. Le plancher garantit qu'un compartiment qui coule reste
        lisible même à bas débit. */
     var actifs = item.q < seuil ? 0 : Math.min(item.particules.length,
-      Math.max(15, Math.round(19 + Math.sqrt(Math.min(item.q, 4)) * 21)));
+      Math.max(3, Math.round((19 + Math.sqrt(Math.min(item.q, 4)) * 21) * FLUX_DENSITE)));
     if (item.mode === 'cavite-borgne' || item.mode === 'oreillette-borgne')
-      actifs = Math.min(actifs, 16);
+      actifs = Math.min(actifs, 3);
     if (item.mode !== 'route' && !item.champ) actifs = 0;
     item.visible = actifs > 0;
 
@@ -971,8 +1048,11 @@ function sensZone(item, d, etat) {
      du cœur gauche. */
   if (item.sensFixe) return 1;
   if (item.comp === 'aorte' && etat.retrogradeAorte) return -1;
+  if (item.comp === 'fbv' && etat.fluxVisuel && etat.fluxVisuel.sensCIV)
+    return etat.fluxVisuel.sensCIV;
   if (item.comp === 'cia' || item.comp === 'fbv') return sensPassage(item.comp, d);
   if (item.comp === 'shunt' && etat.fluxVisuel) return etat.fluxVisuel.sensShunt;
+  if (item.comp === 'canal' && etat.fluxVisuel) return etat.fluxVisuel.sensCanal;
   return 1;
 }
 
@@ -986,25 +1066,36 @@ function animerFlux(svgRoot, anat, etat, dt) {
   if (!svgRoot || !etat || document.body.classList.contains('sans-flux')) return;
   var reduit = !!(window.matchMedia &&
                   window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var fige = document.body.classList.contains('flux-figes');
   dt = limite(dt || 0, 0, 0.06);
   var d = anat.describe();
   var cache = svgRoot._cacheFlux || preparerFlux(svgRoot);
+  var signature = etatSignatureFlux(cache) + '|' +
+    cache.map(function (item) { return sensZone(item, d, etat); }).join(',');
+  if (fige && svgRoot._fluxInitialise) {
+    if (!svgRoot._fluxArretSignature) svgRoot._fluxArretSignature = signature;
+    if (svgRoot._fluxArretSignature === signature) return;
+  }
+  if (!fige) svgRoot._fluxArretSignature = '';
 
   /* Mouvement réduit : on ne fige pas une image vide. On calcule une fois
      l'écoulement établi, on laisse les pathlines se former, puis on
      s'arrête. L'utilisateur voit un instantané lisible plutôt que des
      points isolés. */
-  if (reduit) {
-    var sig = etatSignatureFlux(cache);
+  if (reduit || fige) {
+    var sig = signature;
     if (svgRoot._fluxFige === sig) return;
     svgRoot._fluxFige = sig;
     for (var b = 0; b < 150; b++) avancerCache(cache, d, etat, 1 / 60, true);
     for (var b2 = 0; b2 < 60; b2++) avancerCache(cache, d, etat, 1 / 60, false);
     rendreCache(cache);
+    svgRoot._fluxInitialise = true;
+    if (fige) svgRoot._fluxArretSignature = signature;
     return;
   }
   avancerCache(cache, d, etat, dt, dt > 0);
   rendreCache(cache);
+  svgRoot._fluxInitialise = true;
 }
 
 function etatSignatureFlux(cache) {

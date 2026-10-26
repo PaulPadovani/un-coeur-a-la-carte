@@ -73,8 +73,10 @@ Simulation.prototype.pas = function (dt) {
   /* Seuils cales sur Di Filippo : un debit systemique effondre ou une
      SpO2 sous 75 % ne sont pas tolerables durablement.                  */
   var stress = 0;
-  if (etat.DO2 < 9.0) stress += (9.0 - etat.DO2) / 9.0;
-  if (etat.SaO2 < 72) stress += (72 - etat.SaO2) / 72 * 1.2;
+  if (etat.DO2 < REPERES.do2Reserve)
+    stress += (REPERES.do2Reserve - etat.DO2) / REPERES.do2Reserve;
+  if (etat.SaO2 < REPERES.sao2Reserve)
+    stress += (REPERES.sao2Reserve - etat.SaO2) / REPERES.sao2Reserve * 1.2;
   if (etat.congestion > 0.5) stress += etat.congestion * 1.6;
   if (etat.congestionSystemique > 0.5)
     stress += etat.congestionSystemique * 1.6;
@@ -84,7 +86,8 @@ Simulation.prototype.pas = function (dt) {
      myocardique et retentit a terme sur la fonction systolique ». Au-dela
      d'un Qp/Qs de 2, la surcharge volumetrique use le ventricule en
      quelques jours, meme si la saturation est belle.                     */
-  if (etat.qpqs > 2.0) stress += (etat.qpqs - 2.0) * 0.45;
+  if (etat.qpqs > REPERES.qpqsAlerte)
+    stress += (etat.qpqs - REPERES.qpqsAlerte) * 0.45;
 
   if (stress > 0) this.reserve -= stress * dt * 0.045;
   else this.reserve = Math.min(1, this.reserve + dt * 0.02);

@@ -66,8 +66,8 @@ var CATALOGUE = {
 
   /* ---- communication interventriculaire, partagee par les 2 ventricules ---- */
   fbv: [
-    { id: 'large',      nom: 'FBV large'      },
-    { id: 'restrictif', nom: 'FBV restrictif' },
+    { id: 'large',      nom: 'CIV large'      },
+    { id: 'restrictif', nom: 'CIV restrictive' },
     { id: 'ferme',      nom: 'Septum fermé'   }
   ]
 };

@@ -6,7 +6,7 @@
 <title>Un cœur à la carte — congenital heart physiology simulator</title>
 <link rel="alternate" hreflang="fr" href="../">
 <link rel="alternate" hreflang="en" href="./">
-<link rel="stylesheet" href="../css/vu.css?v=20260805-1">
+<link rel="stylesheet" href="../css/vu.css?v=20261026-3">
 </head>
 <body>
 
@@ -17,7 +17,7 @@
   </div>
   <p>Build the heart, start the circulation, stabilise the child.</p>
   <nav class="langue" aria-label="Language">
-    <a href="../index.html?v=20260805-1" hreflang="fr" lang="fr" title="Version française">FR</a>
+    <a href="../index.html?v=20261026-3" hreflang="fr" lang="fr" title="Version française">FR</a>
     <span aria-current="page">EN</span>
   </nav>
   <button id="btn-flux" class="pilule on" aria-pressed="true"
@@ -48,37 +48,33 @@
   </section>
 
   <!-- Centre panel: assembled heart -->
-  <section class="scene">
-    <svg id="coeur" viewBox="-50 -30 1220 2830" preserveAspectRatio="xMidYMid meet"
-         aria-label="Assembled cardiac anatomy"></svg>
+  <section class="scene" aria-label="Anatomy and circulation">
+    <button id="btn-mouvement" class="outil-scene" aria-pressed="false">Freeze flow</button>
+    <div class="scene-corps">
+      <svg id="coeur" viewBox="-50 -30 1220 2830" preserveAspectRatio="xMidYMid meet"
+           role="img" aria-label="Assembled cardiac anatomy, with ductus arteriosus and flow direction"></svg>
+    </div>
   </section>
 
   <!-- Right panel: physiological monitor -->
   <section class="panneau moniteur">
-    <h2>Monitor</h2>
-    <canvas id="ecg" width="360" height="110" aria-label="ECG trace"></canvas>
-
-    <div class="vitaux">
-      <div><span class="lbl">SaO₂</span><span class="val" id="v-sao2">--</span></div>
-      <div><span class="lbl">SvO₂</span><span class="val" id="v-svo2">--</span></div>
-      <div><span class="lbl">Qp/Qs</span><span class="val" id="v-qpqs">--</span></div>
-      <div><span class="lbl">Systemic DO₂</span><span class="val" id="v-do2">--</span></div>
-    </div>
-
-    <div class="canal">
-      <div class="canal-tete">
-        <span class="lbl">Ductus arteriosus</span>
-        <span class="val" id="v-canal">--</span>
+    <h2>3 — Observe</h2>
+    <div id="lecture-moniteur"></div>
+    <details class="verdict" id="verdict"></details>
+    <div class="etat-secondaire">
+      <div class="canal-ligne">
+        <span>Ductus arteriosus</span>
+        <strong id="v-canal">--</strong>
+        <small id="v-canal-etat"></small>
       </div>
-      <svg id="canal-svg" viewBox="0 0 200 96" preserveAspectRatio="xMidYMid meet"
-           aria-label="Ductus arteriosus patency"></svg>
-      <p class="canal-etat" id="v-canal-etat"></p>
+      <div class="reserve-ligne"><span>Physiological reserve</span><strong id="v-reserve">100 %</strong></div>
+      <div class="jauge"><div class="jauge-in ok" id="reserve"></div></div>
     </div>
-
-    <div class="jauge"><div class="jauge-in ok" id="reserve"></div></div>
-    <p class="jauge-lbl">Physiological reserve</p>
-
-    <div class="verdict" id="verdict"></div>
+    <div class="scope-compact">
+      <div><span>HR</span><strong id="v-fc">140</strong><small>bpm</small></div>
+      <canvas id="ecg" width="360" height="60" role="img" aria-label="Illustrative ECG trace"></canvas>
+    </div>
+    <div id="reperes-emplacement"></div>
   </section>
 
 </main>
@@ -102,14 +98,15 @@
 </footer>
 
 <script>window.APP_LANG = 'en';</script>
-<script src="../js/i18n.js?v=20260805-1"></script>
-<script src="../js/cartes.js?v=20260805-1"></script>
-<script src="../js/anatomie.js?v=20260805-1"></script>
-<script src="../js/model.js?v=20260805-1"></script>
-<script src="../js/champ.js?v=20260805-1"></script>
-<script src="../js/vitals.js?v=20260805-1"></script>
-<script src="../js/render.js?v=20260805-1"></script>
-<script src="../js/transition.js?v=20260805-1"></script>
-<script src="../js/main.js?v=20260805-1"></script>
+<script src="../js/i18n.js?v=20261026-3"></script>
+<script src="../js/cartes.js?v=20261026-3"></script>
+<script src="../js/anatomie.js?v=20261026-3"></script>
+<script src="../js/model.js?v=20261026-3"></script>
+<script src="../js/champ.js?v=20261026-3"></script>
+<script src="../js/vitals.js?v=20261026-3"></script>
+<script src="../js/render.js?v=20261026-3"></script>
+<script src="../js/transition.js?v=20261026-3"></script>
+<script src="../js/lecture.js?v=20261026-3"></script>
+<script src="../js/main.js?v=20261026-3"></script>
 </body>
 </html>

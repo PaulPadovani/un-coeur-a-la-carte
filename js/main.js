@@ -50,6 +50,7 @@ function construireSelecteurs() {
   Array.prototype.forEach.call(document.querySelectorAll('[data-slot]'), function (el) {
     el.addEventListener('change', function () {
       anat[el.getAttribute('data-slot')] = el.value;
+      recalculerConfiguration();
       dessiner();
       noteVoies();
       verdictConstruction();
@@ -96,11 +97,11 @@ function noteVoies() {
 
 /* apercu pendant la construction, sans lancer la simulation */
 function verdictConstruction() {
-  var e = resoudre(anat, { });
+  var e = resoudre(anat, sim.env());
   var c = traduireVerdict(classer(anat, e));
   var box = $('#verdict');
   box.className = 'verdict ' + c.statut;
-  box.innerHTML = '<strong>' + c.titre + '</strong><span>' + c.texte + '</span>';
+  box.innerHTML = '<summary>' + c.titre + '</summary><span>' + c.texte + '</span>';
   $('#btn-start').disabled = (c.statut === 'impossible');
 }
 
@@ -114,6 +115,14 @@ function signatureAnat() {
   var d = anat.describe(), g = anat.gestes;
   return [d.vsD.id, d.vsG.id, d.vd.id, d.vg.id, d.o.id, d.fbv,
           g.cerclage, g.btt, g.rashkind].join('|');
+}
+
+/* Changement demandé par le joueur : mettre à jour aussi en pause, sans
+   attendre un pas d'horloge et sans réutiliser le verdict précédent. */
+function recalculerConfiguration() {
+  if (!sim.etat) return;
+  sim.etat = resoudre(anat, sim.env());
+  sim.classe = classer(anat, sim.etat);
 }
 
 function dessiner(forcer) {
@@ -155,15 +164,22 @@ function dessinerECG() {
   var cvs = $('#ecg'), ctx = cvs.getContext('2d');
   var W = cvs.width, H = cvs.height;
   ajusterTamponECG(W);
+  /* Mouvement réduit : un battement statique, jamais une fausse asystolie. */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (var j = 0; j < ecgData.length; j++) {
+      var phase = (j / (ecgData.length - 1) * ECG_FENETRE * p.fc / 60) % 1;
+      ecgData[j] = p.plat ? 0 : ecgBattement(phase, p.ampl);
+    }
+  }
   ctx.clearRect(0, 0, W, H);
   /* grille discrete facon papier ECG, calee sur la densite de l'ecran */
   var dpr = window.devicePixelRatio || 1, pas = 18 * dpr;
-  ctx.strokeStyle = 'rgba(255,255,255,.055)'; ctx.lineWidth = dpr;
+  ctx.strokeStyle = 'rgba(48,92,66,.065)'; ctx.lineWidth = dpr;
   ctx.beginPath();
   for (var gx = 0; gx < W; gx += pas) { ctx.moveTo(gx, 0); ctx.lineTo(gx, H); }
   for (var gy = 0; gy < H; gy += pas) { ctx.moveTo(0, gy); ctx.lineTo(W, gy); }
   ctx.stroke();
-  ctx.strokeStyle = p.plat ? '#D9584A' : '#5FD08A';
+  ctx.strokeStyle = p.plat ? '#A8332A' : '#3F7650';
   ctx.lineWidth = 2 * dpr;
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.beginPath();
@@ -173,21 +189,6 @@ function dessinerECG() {
     i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
   ctx.stroke();
-
-  /* La fréquence cardiaque appartient au scope, pas à la liste des
-     constantes : sur un moniteur elle est toujours posée sur le tracé. */
-  ctx.textAlign = 'left';
-  ctx.fillStyle = p.plat ? '#D9584A' : '#5FD08A';
-  ctx.font = 'bold ' + Math.round(30 * dpr) + 'px ui-sans-serif,-apple-system,' +
-             '"Segoe UI",Helvetica,Arial,sans-serif';
-  var fcTxt = p.plat ? '0' : String(p.fc);
-  ctx.fillText(fcTxt, 10 * dpr, 32 * dpr);
-  var largeur = ctx.measureText(fcTxt).width;
-  ctx.font = Math.round(12 * dpr) + 'px ui-sans-serif,-apple-system,' +
-             '"Segoe UI",Helvetica,Arial,sans-serif';
-  ctx.globalAlpha = 0.75;
-  ctx.fillText('bpm', 14 * dpr + largeur, 32 * dpr);
-  ctx.globalAlpha = 1;
 }
 
 /* Le balayage avance en SECONDES, pas en images : un poste rapide ne doit
@@ -215,79 +216,22 @@ function avancerECG(dtms) {
 }
 
 /* ------------------------------------------------------------------ canal */
-/* Le canal artériel dessiné, pas chiffré : deux vaisseaux, un ostium
-   réellement ouvert dans chaque paroi, et entre les deux une lumière qui se
-   resserre heure après heure. Fermé, il ne reste qu'un cordon — le ligament
-   artériel. Le trait suit les conventions du jeu de cartes : tout en stroke,
-   extrémités arrondies, aucun aplat d'encre. */
-function dessinerCanal(p, etat) {
-  var svg = document.getElementById('canal-svg');
-  if (!svg) return;
-  var T = 4.4;                       /* épaisseur de trait */
-  var yc = 46, xA = 56, xP = 144;    /* aorte à gauche, AP à droite */
-  var h = 3 + 15 * Math.max(0, Math.min(1, p));   /* demi-lumière du canal */
-  var couleur = etat ? satColor(etat.qpqs > 1 ? etat.SaO2 : etat.SapO2) : '#CFC9BA';
-  var o = [];
-
-  function tube(x, hv) {              /* vaisseau vertical, paroi coupée */
-    return '<path d="M' + x + ',6 L' + x + ',' + (yc - hv) + '"/>' +
-           '<path d="M' + x + ',' + (yc + hv) + ' L' + x + ',86"/>';
-  }
-  /* remplissage : les deux vaisseaux et, si le canal est ouvert, sa lumière */
-  o.push('<g fill="' + couleur + '" opacity="0.88" stroke="none">');
-  o.push('<rect x="20" y="6" width="36" height="80"/>');
-  o.push('<rect x="144" y="6" width="36" height="80"/>');
-  if (p > 0.04)
-    o.push('<rect x="' + xA + '" y="' + (yc - h) + '" width="' + (xP - xA) +
-           '" height="' + (2 * h) + '"/>');
-  o.push('</g>');
-
-  o.push('<g fill="none" stroke="currentColor" stroke-width="' + T +
-         '" stroke-linecap="round" stroke-linejoin="round">');
-  o.push('<path d="M20,6 L20,86"/>');                    /* paroi externe Ao */
-  o.push('<path d="M180,6 L180,86"/>');                  /* paroi externe AP */
-  if (p > 0.04) {
-    o.push(tube(xA, h));                                 /* ostium aortique */
-    o.push(tube(xP, h));                                 /* ostium pulmonaire */
-    o.push('<path d="M' + xA + ',' + (yc - h) + ' L' + xP + ',' + (yc - h) + '"/>');
-    o.push('<path d="M' + xA + ',' + (yc + h) + ' L' + xP + ',' + (yc + h) + '"/>');
-  } else {
-    /* ligament artériel : cordon plein, aucune lumière — même convention
-       graphique que l'atrésie pulmonaire */
-    o.push('<path d="M' + xA + ',6 L' + xA + ',86"/>');
-    o.push('<path d="M' + xP + ',6 L' + xP + ',86"/>');
-    o.push('<path d="M' + xA + ',' + yc + ' L' + xP + ',' + yc +
-           '" stroke-width="3"/>');
-  }
-  o.push('</g>');
-
-  o.push('<g fill="#6B665C" stroke="none" font-size="11" ' +
-         'font-family="ui-sans-serif,-apple-system,Helvetica,Arial,sans-serif" ' +
-         'text-anchor="middle">');
-  o.push('<text x="38" y="96">Ao</text><text x="162" y="96">' +
-         tr('vessel.pulmonaryAbbr', 'AP') + '</text>');
-  o.push('</g>');
-  svg.innerHTML = o.join('');
-}
-
 function etatCanal(p) {
   if (p > 0.95) return tr('canal.wide', 'largement ouvert');
   if (p > 0.6) return tr('canal.closing', 'en cours de fermeture');
   if (p > 0.2) return tr('canal.restrictive', 'restrictif');
-  if (p > 0.04) return tr('canal.nearlyClosed', 'quasi fermé');
+  if (p > 0.02) return tr('canal.nearlyClosed', 'quasi fermé');
   return tr('canal.closed', 'fermé — ligament artériel');
 }
 
 function majMoniteur() {
   var e = sim.etat || resoudre(anat, sim.env());
-  function set(id, v) { $(id).textContent = v; }
-  set('#v-sao2', sim.mort ? '--' : Math.round(e.SaO2) + ' %');
-  set('#v-qpqs', e.qpqs >= 99 ? '∞' : e.qpqs.toFixed(2));
+  function set(id, v) { var el = $(id); if (el.textContent !== String(v)) el.textContent = v; }
+  set('#v-sao2', sim.mort ? '—' : Math.round(e.SaO2));
   set('#v-svo2', sim.mort ? '--' : Math.round(e.SvO2) + ' %');
-  set('#v-do2', sim.mort ? '--' : Math.round(e.DO2));
+  set('#v-do2', sim.mort ? '—' : nombreLecture(e.DO2, 1));
   set('#v-canal', Math.round(anat.canal * 100) + ' %');
   set('#v-canal-etat', etatCanal(anat.canal));
-  dessinerCanal(anat.canal, e);
   set('#v-temps', 'H' + Math.floor(sim.t) +
       (sim.pause ? ' · ' + tr('time.pause', 'pause') : ''));
   $('#reserve').style.width = Math.round(sim.reserve * 100) + '%';
@@ -300,13 +244,15 @@ function majMoniteur() {
   if (sim.mort) {
     var mort = traduireDeces(sim.mort);
     box.className = 'verdict letal';
-    box.innerHTML = '<strong>' + mort.titre + '</strong><span>' +
-                    mort.texte + '</span>';
+    var contenuMort = '<summary>' + mort.titre + '</summary><span>' + mort.texte + '</span>';
+    if (box.innerHTML !== contenuMort) box.innerHTML = contenuMort;
   } else if (sim.enCours) {
     box.className = 'verdict ' + c.statut;
-    box.innerHTML = '<strong>' + c.titre + '</strong><span>' + c.texte + '</span>';
+    var contenu = '<summary>' + c.titre + '</summary><span>' + c.texte + '</span>';
+    if (box.innerHTML !== contenu) box.innerHTML = contenu;
   }
   $('#lecture-transition').textContent = lectureTransition(sim, e);
+  majLecture(e);
 }
 
 /* ------------------------------------------------------------------ boucle */
@@ -325,7 +271,7 @@ function boucle(ts) {
      Ils se figent en pause et à la mort. */
   animerFlux($("#coeur"), anat, _etat, (sim.pause || sim.mort) ? 0 : dtms / 1000);
 
-  if (!sim.pause) avancerECG(dtms);
+  if (!sim.pause && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) avancerECG(dtms);
   dessinerECG();
   if (!document.body.classList.contains('graphe-replie'))
     dessinerTransition($('#transition'), sim);
@@ -349,7 +295,7 @@ function construireGestes() {
   var h = '';
   GESTES.forEach(function (g) {
     h += '<button class="geste" data-geste="' + g[0] + '" title="' +
-         tr('gesture.' + g[0] + '.title', g[2]) + '">' +
+         tr('gesture.' + g[0] + '.title', g[2]) + '" aria-pressed="false">' +
          tr('gesture.' + g[0] + '.name', g[1]) + '</button>';
   });
   $('#gestes').innerHTML = h;
@@ -358,11 +304,13 @@ function construireGestes() {
       var k = b.getAttribute('data-geste');
       anat.gestes[k] = !anat.gestes[k];
       b.classList.toggle('on', anat.gestes[k]);
+      b.setAttribute('aria-pressed', String(anat.gestes[k]));
       if (k === 'rashkind' && anat.gestes[k]) {
         anat.oreillettes = anat.oreillettes.replace(/^O[13]/, 'O2');
         construireSelecteurs();
       }
       if (sim.enCours) sim.noter(k, anat.gestes[k]);
+      recalculerConfiguration();
       dessiner();
       if (!sim.enCours) verdictConstruction();
     });
@@ -371,7 +319,7 @@ function construireGestes() {
 
 function reinitGestes() {
   Array.prototype.forEach.call(document.querySelectorAll('[data-geste]'),
-    function (b) { b.classList.remove('on'); });
+    function (b) { b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); });
   for (var k in anat.gestes) anat.gestes[k] = false;
 }
 
@@ -438,6 +386,7 @@ function redimensionner() {
 
 /* ------------------------------------------------------------------ init */
 window.addEventListener('DOMContentLoaded', function () {
+  construireLecture();
   construireSelecteurs();
   construireGestes();
   dessiner();
@@ -482,7 +431,7 @@ window.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('keydown', function (ev) {
     if (ev.code !== 'Space' && ev.key !== ' ') return;
     var t = ev.target.tagName;
-    if (t === 'SELECT' || t === 'INPUT' || t === 'BUTTON') return;
+    if (t === 'SELECT' || t === 'INPUT' || t === 'BUTTON' || t === 'SUMMARY' || t === 'A') return;
     ev.preventDefault();
     basculerPause();
   });

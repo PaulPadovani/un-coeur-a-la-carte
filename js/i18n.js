@@ -27,8 +27,8 @@ var TEXTES_EN = {
   'catalogue.voies.A1': 'Normal-calibre aorta',
   'catalogue.voies.A2': 'Hypoplastic aorta + coarctation',
   'catalogue.voies.A3': 'Thread-like aorta, imperforate valve',
-  'catalogue.fbv.large': 'Large bulboventricular foramen',
-  'catalogue.fbv.restrictif': 'Restrictive bulboventricular foramen',
+  'catalogue.fbv.large': 'Large VSD',
+  'catalogue.fbv.restrictif': 'Restrictive VSD',
   'catalogue.fbv.ferme': 'Intact ventricular septum',
 
   'note.av.tricuspide': 'No right-sided inlet valve: tricuspid atresia.',
@@ -89,6 +89,8 @@ var TEXTES_EN = {
   'classification.restriction-auriculaire.title': 'Atrial restriction',
   'classification.restriction-auriculaire.text': 'Pulmonary venous return has no outlet: pulmonary oedema and hypoxaemia. Urgent atrial septostomy is required.',
   'classification.retour-cave-bloque.title': 'Blocked systemic venous return',
+  'classification.retour-pulmonaire-bloque.title': 'Blocked pulmonary venous return',
+  'classification.retour-pulmonaire-bloque.text': 'The mitral valve is atretic and the atrial septum is intact: pulmonary venous return is trapped in the left atrium. The model cannot represent stationary flow. An atrial communication is required.',
   'classification.retour-cave-bloque.text': 'The tricuspid valve is atretic and the atrial septum is intact: caval blood is trapped in the right atrium. Effective ventricular filling is impossible. An atrial communication must be created urgently.',
   'classification.restriction-retour-cave.title': 'Restricted systemic venous return',
   'classification.restriction-retour-cave.text': 'All caval return must cross a restrictive atrial communication: right atrial pressure rises and cardiac output falls. The communication must be enlarged.',
@@ -103,7 +105,7 @@ var TEXTES_EN = {
   'classification.hypodebit.title': 'Low pulmonary blood flow',
   'classification.hypodebit.text': 'SpO₂ below 75% indicates oxygen-resistant cyanosis. Pulmonary blood flow must be increased (ductus or shunt).',
   'classification.equilibre.title': 'Balanced circulation',
-  'classification.equilibre.text': 'Qp/Qs between 1 and 2 and SpO₂ between 75 and 85%: the target described by Di Filippo.',
+  'classification.equilibre.text': 'No instability criterion detected. Complete-mixing references: SaO₂ 75–85% and Qp/Qs 1–1.5; interpret alongside systemic flow.',
 
   'death.oedeme-pulmonaire.title': 'Pulmonary oedema due to atrial restriction',
   'death.oedeme-pulmonaire.text': 'Pulmonary venous return had no outlet. Urgent atrial septostomy was the only effective intervention.',

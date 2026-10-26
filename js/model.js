@@ -37,6 +37,14 @@ var CFG = {
   tau: 40           /* constante de temps de la chute des RVP, en heures */
 };
 
+/* Repères pédagogiques partagés par le moteur et le moniteur.
+   Les valeurs de réserve sont des calibrations internes, sans unité clinique.
+   Di Filippo 2010 : SaO₂ 75–85 %, Qp/Qs 1–1,5 ; alerte du jeu au-delà de 2. */
+var REPERES = {
+  sao2VU: [75, 85], qpqsVU: [1, 1.5],
+  qpqsAlerte: 2, sao2Reserve: 72, do2Reserve: 9
+};
+
 function serie(l) { var r = 0; for (var i = 0; i < l.length; i++) r += l[i]; return r; }
 function parallele(a, b) {
   if (a >= 1e9) return b;
@@ -129,6 +137,7 @@ function resoudre(anat, env) {
      limite donc le remplissage ; un septum intact l'annule. Cette contrainte
      de PRECHARGE est distincte du partage Qp/Qs calcule plus bas. */
   var congestionSystemique = congestionSys(d, rA);
+  var congestion = congestionPulm(d, rA, cx);
   /* Décomposition du pont aorto-pulmonaire pour le rendu. Elle ne change
      pas la résolution : elle répartit seulement le débit déjà calculé entre
      canal et BTT, afin que chaque trajet puisse être animé honnêtement. */
@@ -178,7 +187,10 @@ function resoudre(anat, env) {
      Le seuil et la pente sont partages avec l'obstruction du retour
      pulmonaire : CIA large = aucune penalite, restrictive = bas debit,
      septum intact = aucun regime stationnaire possible. */
-  var facteurRemplissage = 1 - congestionSystemique;
+  /* Les deux retours veineux doivent avoir une issue dans ce modèle
+     stationnaire. La même pénalité de remplissage est appliquée de chaque
+     côté ; elle ne simule ni la compliance ni une accumulation transitoire. */
+  var facteurRemplissage = (1 - congestionSystemique) * (1 - congestion);
   Qs *= facteurRemplissage;
   Qp *= facteurRemplissage;
   fluxPontNet *= facteurRemplissage;
@@ -189,7 +201,6 @@ function resoudre(anat, env) {
   /* ---------------- saturations par bilan de masse ---------------- */
   var SpvO2 = CFG.SpvO2;
   /* congestion veineuse pulmonaire : le sang qui stagne s'oxygene moins */
-  var congestion = congestionPulm(d, rA, cx);
   SpvO2 -= 22 * congestion;
 
   var SaO2, SapO2, SvO2;
@@ -197,13 +208,23 @@ function resoudre(anat, env) {
 
   /* la discordance ventriculo-arterielle inverse les destinations */
   var disc = !!d.discordance;
+  /* Dans deux ventricules concordants, le sens de la CIV suit le même
+     gradient que la désaturation aortique : l'obstacle droit inverse le
+     passage lorsque la voie pulmonaire devient plus résistante. Les
+     chambres bulbaires gardent leur sens anatomique propre au rendu. */
+  var inversionCIV = Math.max(0, (Rpulm - Rsys) / Math.max(Rpulm, 1e-6));
+  var sensCIV = rFBV < 1e9 && !univentriculaire && !uneSeuleValveAV && !disc
+    ? (inversionCIV > 0.02 ? 1 : -1) : 0;
 
   if (!cx.systemique || Qs <= 1e-6) {
     SaO2 = 20; SapO2 = 20; SvO2 = 10;
   } else if (melangeComplet) {
     /* melange complet : aorte et AP recoivent le meme sang.
        SaO2 = SpvO2 - Ea/(Qp/Qs)  — la relation de Barnea EMERGE ici.    */
-    SaO2 = qpqs > 1e-3 ? SpvO2 - Ea / qpqs : 20;
+    /* Le plafond d'affichage du rapport ne doit pas modifier le bilan.
+       Les débits bruts déterminent le mélange, même si Qp/Qs dépasse 15. */
+    var rapportMelange = Qp / Qs;
+    SaO2 = rapportMelange > 1e-3 ? SpvO2 - Ea / rapportMelange : 20;
     SapO2 = SaO2;
   } else {
     /* Circuits separes. La saturation systemique ne depend PAS du Qp/Qs mais
@@ -231,11 +252,8 @@ function resoudre(anat, env) {
          n'abaisse PAS la saturation aortique — il recircule du sang deja
          oxygene dans le poumon. La saturation ne chute que si le shunt
          s'inverse (resistances pulmonaires ou obstacle droit).            */
-      var RpulmTot = serie([rVoiePulm, RVP]);
-      var RsysTot = serie([rVoieSys, RVS]);
-      var invers = Math.max(0, (RpulmTot - RsysTot) / Math.max(RpulmTot, 1e-6));
-      SaO2 = (invers > 0.02 && Qeff > 1e-6)
-             ? SpvO2 - Ea * Qs / Qeff * invers
+      SaO2 = (inversionCIV > 0.02 && Qeff > 1e-6)
+             ? SpvO2 - Ea * Qs / Qeff * inversionCIV
              : SpvO2;
       /* saut oxymetrique dans l'artere pulmonaire : signature du shunt G-D */
       var shuntGD = Math.max(0, Qp - Qs);
@@ -275,6 +293,7 @@ function resoudre(anat, env) {
     fluxVisuel: {
       canal: Math.abs(fluxCanal),
       shunt: Math.abs(fluxShunt),
+      sensCIV: sensCIV,
       sensCanal: fluxCanal < 0 ? -1 : 1,
       sensShunt: fluxShunt < 0 ? -1 : 1
     },
@@ -345,6 +364,11 @@ function classer(anat, etat) {
              titre: 'Retour cave sans issue',
              texte: 'La valve tricuspide est atrétique et le septum interauriculaire est intact : le sang cave reste bloqué dans l’oreillette droite. Aucun remplissage efficace n’est possible. Il faut créer une communication interauriculaire en urgence.' };
 
+  if (!cx.retourPulmonaire || etat.congestion >= 0.999)
+    return { statut: 'letal', cause: 'retour-pulmonaire-bloque',
+             titre: 'Retour pulmonaire sans issue',
+             texte: 'La valve mitrale est atrétique et le septum interauriculaire est intact : le retour pulmonaire reste bloqué dans l’oreillette gauche. Le modèle ne peut représenter de débit stationnaire. Une communication interauriculaire est nécessaire.' };
+
   if (etat.congestionSystemique > 0.55)
     return { statut: 'critique', cause: 'restriction-retour-cave',
              titre: 'Restriction du retour cave',
@@ -399,17 +423,17 @@ function classer(anat, etat) {
              texte: 'L’aorte naît de la chambre non dominante et le foramen est restrictif. L’obstacle dévie le flux vers le poumon et majore le Qp. Un cerclage l’aggravera.' };
 
   /* seuils Di Filippo */
-  if (etat.qpqs > 2.0)
+  if (etat.qpqs > REPERES.qpqsAlerte)
     return { statut: 'instable', cause: 'hyperdebit',
              titre: 'Hyperdébit pulmonaire',
              texte: 'Qp/Qs supérieur à 2 : surcharge volumétrique du ventricule. La saturation est belle (SpO₂ > 90 %) mais le débit systémique s’effondre. Le geste est un cerclage de l’artère pulmonaire.' };
 
-  if (etat.SaO2 < 75)
+  if (etat.SaO2 < REPERES.sao2VU[0])
     return { statut: 'instable', cause: 'hypodebit',
              titre: 'Hypodébit pulmonaire',
              texte: 'SpO₂ inférieure à 75 % : cyanose réfractaire à l’oxygène. Il faut augmenter le débit pulmonaire (canal, shunt).' };
 
   return { statut: 'equilibre', cause: 'equilibre',
            titre: 'Circulation équilibrée',
-           texte: 'Qp/Qs entre 1 et 2 et SpO₂ entre 75 et 85 % : c’est la cible de Di Filippo.' };
+           texte: 'Pas de critère d’instabilité détecté. Repères de mélange complet : SaO₂ 75–85 % et Qp/Qs 1–1,5 ; interpréter avec le débit systémique.' };
 }

@@ -121,6 +121,7 @@ Ils ne constituent pas une validation clinique.
 | `js/render.js` | Assemblage, rendu et visualisation des flux |
 | `js/transition.js` | Graphe de transition néonatale |
 | `js/i18n.js` | Terminologie de l'interface anglaise |
+| `js/lecture.js` | Repères contextualisés et moniteur |
 | `js/main.js` | Coordination de l'interface |
 | `test*.js`, `rapport.js` | Contrôles directionnels et rapport de comportement |
 
@@ -160,3 +161,5 @@ la licence logicielle. Aucun droit de réutilisation n'est accordé sur ces
 éléments. Voir [`NOTICE`](NOTICE) pour le périmètre complet.
 
 Copyright © 2026 Paul Padovani.
+
+Les conventions visuelles et la préparation des futurs montages sont décrites dans [SCHEMAS.md](SCHEMAS.md).

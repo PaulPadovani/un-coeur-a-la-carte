@@ -113,6 +113,7 @@ behaviour. They do not constitute clinical validation.
 | `js/render.js` | Assembly, rendering, and flow visualisation |
 | `js/transition.js` | Neonatal transition graph |
 | `js/i18n.js` | English interface terminology |
+| `js/lecture.js` | Contextual references and monitor |
 | `js/main.js` | Interface coordination |
 | `test*.js`, `rapport.js` | Directional checks and behavioural report |
 
@@ -148,3 +149,5 @@ the software licence. No reuse rights are granted for these elements. See
 [`NOTICE`](NOTICE) for the full scope.
 
 Copyright © 2026 Paul Padovani.
+
+The visual conventions and preparation for future surgical configurations are documented in [SCHEMAS.md](SCHEMAS.md) (French).
